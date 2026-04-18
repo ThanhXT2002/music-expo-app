@@ -1,0 +1,14 @@
+node_modules
+.expo
+dist
+build
+coverage
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ttf
+*.otf
+*.woff
+*.woff2
