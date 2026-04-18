@@ -1,7 +1,9 @@
-/**
- * @file (tabs)/search.tsx
- * @description Route tìm kiếm — thin wrapper import SearchScreen từ features.
- * @module app/(tabs)
- */
+import { View, Text } from 'react-native';
 
-export { default } from '@features/search/components/SearchScreen';
+export default function SearchScreen() {
+  return (
+    <View className="flex-1 items-center justify-center bg-[#080316]">
+      <Text className="text-white text-xl">Tìm kiếm (Phục hồi từ Tabs)</Text>
+    </View>
+  );
+}
