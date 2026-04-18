@@ -1,72 +1,121 @@
-/**
- * @file (tabs)/_layout.tsx
- * @description Tab navigator layout — 4 tab chính: Home, Search, Library, Profile.
- * @module app/(tabs)
- */
-
+import React from 'react';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { MiniPlayer } from '@features/player/components/MiniPlayer';
-import { View } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Home, ListMusic, LibraryBig, DownloadCloud, Settings } from 'lucide-react-native';
 
-/**
- * Layout cho tab navigation.
- * Hiển thị MiniPlayer nổi phía trên tab bar.
- */
-export default function TabLayout() {
+const TAB_CONFIG: Record<string, { Icon: any; label: string }> = {
+  index: { Icon: Home, label: 'TRANG CHỦ' },
+  list: { Icon: ListMusic, label: 'DANH SÁCH' },
+  library: { Icon: LibraryBig, label: 'THƯ VIỆN' },
+  downloads: { Icon: DownloadCloud, label: 'TẢI XUỐNG' },
+  settings: { Icon: Settings, label: 'CÀI ĐẶT' },
+};
+
+function PillTabBar({ state, descriptors, navigation }: any) {
+  const insets = useSafeAreaInsets();
+  
+  // Màu sắc chủ đạo của Music App (Dark Mode)
+  const colors = {
+    surface: '#080316', // Trùng màu nền app
+    surfaceElevated: '#1a142c', // Màu nền của Pill sáng hơn 1 chút
+    border: '#2c2445', // Viền mỏng
+    textMuted: '#9e9e9e', // Icon khi chưa chọn
+    accent: '#1DB954', // Màu chủ đạo khi chọn (xanh Spotify)
+  };
+
   return (
-    <View className="flex-1 bg-[#0A0A0A]">
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: '#0A0A0A',
-            borderTopColor: '#2A2A3E',
-            borderTopWidth: 0.5,
-            height: 60,
-            paddingBottom: 8,
-            paddingTop: 8,
-          },
-          tabBarActiveTintColor: '#6C63FF',
-          tabBarInactiveTintColor: '#6B6B6B',
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '600',
-          },
-        }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Trang chủ',
-            tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="search"
-          options={{
-            title: 'Tìm kiếm',
-            tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="library"
-          options={{
-            title: 'Thư viện',
-            tabBarIcon: ({ color, size }) => <Ionicons name="library" size={size} color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: 'Cá nhân',
-            tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
-          }}
-        />
-      </Tabs>
+    <View style={[styles.tabBarOuter, { backgroundColor: colors.surface, paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24 }]}>
+      <View style={[styles.pill, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+        {state.routes.map((route: any, index: number) => {
+          const isFocused = state.index === index;
+          const config = TAB_CONFIG[route.name] || { Icon: Home, label: route.name };
+          const TabIcon = config.Icon;
+          const textColor = isFocused ? colors.accent : colors.textMuted;
 
-      {/* MiniPlayer nổi phía trên tab bar */}
-      <MiniPlayer />
+          const onPress = () => {
+            if (Platform.OS !== 'web') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+            const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+            if (!isFocused && !event.defaultPrevented) {
+              navigation.navigate(route.name, route.params);
+            }
+          };
+
+          return (
+            <Pressable
+              key={route.key}
+              onPress={onPress}
+              style={styles.tabItem}
+              accessibilityRole="button"
+              accessibilityState={isFocused ? { selected: true } : {}}
+              accessibilityLabel={config.label}
+            >
+              <TabIcon size={20} color={textColor} strokeWidth={isFocused ? 2.5 : 1.8} />
+              <Text
+                style={[styles.tabLabel, { color: textColor, fontWeight: isFocused ? '600' : '500' }]}
+                numberOfLines={1}
+              >
+                {config.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
+
+export default function TabLayout() {
+  return (
+    <Tabs
+      tabBar={(props) => <PillTabBar {...props} />}
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <Tabs.Screen name="index" options={{ title: 'Trang chủ' }} />
+      <Tabs.Screen name="list" options={{ title: 'Danh sách' }} />
+      <Tabs.Screen name="library" options={{ title: 'Thư viện' }} />
+      <Tabs.Screen name="downloads" options={{ title: 'Tải xuống' }} />
+      <Tabs.Screen name="settings" options={{ title: 'Cài đặt' }} />
+    </Tabs>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabBarOuter: { 
+    paddingTop: 12, 
+    paddingHorizontal: 21,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0
+  },
+  pill: { 
+    flexDirection: 'row', 
+    borderRadius: 100, 
+    borderWidth: 1, 
+    height: 64, 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    alignItems: 'center' 
+  },
+  tabItem: { 
+    flex: 1, 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    gap: 4, 
+    height: '100%', 
+    borderRadius: 26 
+  },
+  tabLabel: { 
+    fontSize: 10, 
+    letterSpacing: 0.5 
+  },
+});
