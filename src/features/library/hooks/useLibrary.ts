@@ -20,10 +20,9 @@ export function useLibrary() {
   const query = useQuery({
     queryKey: ['library', 'tracks'],
     queryFn: async () => {
-      logger.info('Tải thư viện nhạc');
-      const response = await apiClient.get<Track[]>('/library/tracks');
-      logger.info('Tải thư viện thành công', { total: response.data.length });
-      return response.data;
+      logger.info('API Thư viện tạm thời bị vô hiệu hoá');
+      // Trả về mảng rỗng để không bị báo lỗi 404 cho tính năng đang phát triển
+      return [];
     },
   });
 

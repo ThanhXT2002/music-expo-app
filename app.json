@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
+    "backgroundColor": "#080316",
     "scheme": "musicexpoapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -24,7 +25,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.thanhtx2002.musicexpoapp"
     },
     "web": {
       "output": "static",

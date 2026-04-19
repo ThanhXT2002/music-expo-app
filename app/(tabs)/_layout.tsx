@@ -12,27 +12,19 @@ const TAB_CONFIG: Record<string, { Icon: any; label: string }> = {
   downloads: { Icon: DownloadCloud, label: 'TẢI XUỐNG' },
   settings: { Icon: Settings, label: 'CÀI ĐẶT' },
 };
+import { COLORS } from '@shared/constants/colors';
 
 function PillTabBar({ state, descriptors, navigation }: any) {
   const insets = useSafeAreaInsets();
-  
-  // Màu sắc chủ đạo của Music App (Dark Mode)
-  const colors = {
-    surface: '#080316', // Trùng màu nền app
-    surfaceElevated: '#1a142c', // Màu nền của Pill sáng hơn 1 chút
-    border: '#2c2445', // Viền mỏng
-    textMuted: '#9e9e9e', // Icon khi chưa chọn
-    accent: '#1DB954', // Màu chủ đạo khi chọn (xanh Spotify)
-  };
 
   return (
-    <View style={[styles.tabBarOuter, { backgroundColor: colors.surface, paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24 }]}>
-      <View style={[styles.pill, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+    <View style={[styles.tabBarOuter, { paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24 }]}>
+      <View style={[styles.pill, { backgroundColor: COLORS.surface, borderColor: COLORS.border }]}>
         {state.routes.map((route: any, index: number) => {
           const isFocused = state.index === index;
           const config = TAB_CONFIG[route.name] || { Icon: Home, label: route.name };
           const TabIcon = config.Icon;
-          const textColor = isFocused ? colors.accent : colors.textMuted;
+          const textColor = isFocused ? COLORS.primary : COLORS.textMuted;
 
           const onPress = () => {
             if (Platform.OS !== 'web') {

@@ -1,16 +1,24 @@
 /**
  * @file useBootstrap.ts
- * @description Hook khởi tạo ứng dụng — audio engine, session, splash screen.
- * Giữ splash hiển thị cho đến khi mọi thứ sẵn sàng.
+ * @description Hook khởi tạo ứng dụng.
+ *
+ * Luồng:
+ * 1. preventAutoHideAsync() — giữ splash
+ * 2. Khởi tạo audio engine (ngầm)
+ * 3. Restore session → setIsReady(true)
+ * 4. _layout.tsx phát hiện isReady → ẩn splash + auth guard
+ *
+ * QUAN TRỌNG: Không subscribe vào authStore để tránh re-render cascade.
  * @module core
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { setupAudioManager } from '@core/audio/AudioManager';
 import { setupBackgroundAudio } from '@core/audio/BackgroundAudio';
 import { createLogger } from '@core/logger';
-import { useAuth } from '@features/auth/hooks/useAuth';
+import * as authService from '@features/auth/services/authService';
+import { useAuthStore } from '@features/auth/store/authStore';
 
 const logger = createLogger('bootstrap');
 
@@ -18,23 +26,14 @@ const logger = createLogger('bootstrap');
 SplashScreen.preventAutoHideAsync();
 
 /**
- * Hook khởi tạo app — chạy 1 lần duy nhất khi mở app.
+ * Hook khởi tạo app — KHÔNG chặn UI, KHÔNG gây re-render cascade.
  *
- * Luồng thực thi:
- * 1. Splash hiển thị (preventAutoHideAsync)
- * 2. Khởi tạo audio engine
- * 3. Khôi phục session đăng nhập
- * 4. Ẩn splash (hideAsync)
- *
- * @returns `appIsReady` — true khi app đã sẵn sàng hiển thị
+ * Dùng authService trực tiếp + authStore.getState() thay vì useAuth()
+ * để tránh subscribe vào authStore.
  */
-export function useBootstrap(): boolean {
-  const { restoreSession } = useAuth();
-  const [appIsReady, setAppIsReady] = useState(false);
-
-  // Khởi tạo ứng dụng
+export function useBootstrap(): void {
   useEffect(() => {
-    async function bootstrap() {
+    async function initBackground() {
       logger.info('Bắt đầu khởi tạo ứng dụng');
 
       // Audio engine
@@ -46,23 +45,24 @@ export function useBootstrap(): boolean {
         logger.error('Khởi tạo audio engine thất bại', error);
       }
 
-      // Khôi phục session
-      await restoreSession();
+      // Restore session — dùng getState() thay vì hook để KHÔNG subscribe
+      try {
+        const session = await authService.restoreSession();
+        const { setUser, setIsReady } = useAuthStore.getState();
+        if (session) setUser(session.user);
+        setIsReady(true);
+      } catch (error) {
+        logger.error('Khôi phục session thất bại', error);
+        useAuthStore.getState().setIsReady(true);
+      }
 
-      setAppIsReady(true);
+      // Ẩn splash sau khi session check xong
+      // _layout.tsx sẽ dùng isReady để quyết định redirect
+      await SplashScreen.hideAsync();
+
       logger.info('Khởi tạo hoàn tất');
     }
 
-    bootstrap();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    initBackground();
   }, []);
-
-  // Ẩn splash khi đã sẵn sàng
-  useEffect(() => {
-    if (appIsReady) {
-      SplashScreen.hideAsync();
-    }
-  }, [appIsReady]);
-
-  return appIsReady;
 }

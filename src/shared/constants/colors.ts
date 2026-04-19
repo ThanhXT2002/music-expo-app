@@ -7,65 +7,73 @@
 
 /**
  * Bảng màu chính của ứng dụng.
- * Thiết kế tối ưu cho Dark Mode, lấy cảm hứng từ Spotify/Apple Music.
+ * Thiết kế tối ưu cho Dark Mode, lấy cảm hứng từ Spotify.
  */
 export const COLORS = {
   // --- Background ---
-  /** Nền chính — đen tuyệt đối */
-  background: '#0A0A0A',
-  /** Nền phụ — xám rất đậm cho card/section */
-  backgroundSecondary: '#1A1A2E',
-  /** Nền nâng cao — cho bottom sheet, modal */
-  backgroundElevated: '#16213E',
-  /** Nền surface — cho input, search bar */
-  surface: '#1E1E2E',
+  /** Nền chính — đen rất sâu (deep dark) */
+  background: '#080316',
+  /** Nền phụ — cho bottom sheet, thiết kế màn hình nâng cao */
+  backgroundSecondary: '#120d20',
+  /** Nền surface (các khối nổi trên nền như Tab Bar Pill, Card) */
+  surface: '#1a142c',
 
   // --- Text ---
   /** Chữ chính — trắng sáng */
   textPrimary: '#EAEAEA',
   /** Chữ phụ — xám nhạt */
   textSecondary: '#A0A0A0',
-  /** Chữ mờ — hint, placeholder */
-  textMuted: '#6B6B6B',
+  /** Chữ mờ — hint, placeholder, icon inactive */
+  textMuted: '#9e9e9e',
 
-  // --- Accent / Brand ---
-  /** Màu chủ đạo — tím xanh gradient */
-  primary: '#6C63FF',
-  /** Màu chủ đạo nhạt */
-  primaryLight: '#8B83FF',
+  // --- Brand / Accent ---
+  /** Màu chủ đạo (Tím Neon) */
+  primary: '#B026FF',
+  /** Màu chủ đạo nhạt hơn khi press/hover */
+  primaryLight: '#D270FF',
   /** Màu chủ đạo đậm */
-  primaryDark: '#4A42D4',
-  /** Màu phụ — hồng neon */
-  secondary: '#FF6B9D',
-  /** Màu nhấn thứ 3 — xanh mint */
-  accent: '#00D4AA',
+  primaryDark: '#7A00CC',
+
+  // --- Extended Palette (Từ hình ảnh thiết kế) ---
+  /** Tím đậm (Deep Purple) */
+  secondary: '#4B2991',
+  /** Tím (Purple) */
+  tertiary: '#872CA2',
+  /** Đỏ tươi/Hồng sẫm (Magenta/Pink) */
+  quaternary: '#C0369D',
+  /** Hồng (Rose/Pink) */
+  quinary: '#EA4F88',
+  /** Hồng cam (Salmon Pink) */
+  senary: '#FA7876',
+  /** Cam đào (Peach/Orange) */
+  septenary: '#F6A97A',
 
   // --- Status ---
   /** Thành công */
-  success: '#4CAF50',
+  success: '#1DB954',
   /** Cảnh báo */
-  warning: '#FF9800',
+  warning: '#FFB800',
   /** Lỗi */
-  error: '#F44336',
+  error: '#FF415B',
   /** Thông tin */
   info: '#2196F3',
 
   // --- Border ---
   /** Viền mặc định */
-  border: '#2A2A3E',
+  border: '#2c2445',
   /** Viền khi focus */
-  borderFocus: '#6C63FF',
+  borderFocus: '#B026FF',
 
   // --- Overlay ---
   /** Nền mờ cho modal/overlay */
-  overlay: 'rgba(0, 0, 0, 0.6)',
+  overlay: 'rgba(8, 3, 22, 0.7)',
 
   // --- Skeleton ---
   /** Nền loading skeleton */
-  skeleton: '#2A2A3E',
+  skeleton: '#1a142c',
   /** Hiệu ứng shimmer loading */
-  skeletonHighlight: '#3A3A4E',
-} as const;
+  skeletonHighlight: '#2c2445'
+} as const
 
 /** Type-safe color key */
-export type ColorKey = keyof typeof COLORS;
+export type ColorKey = keyof typeof COLORS

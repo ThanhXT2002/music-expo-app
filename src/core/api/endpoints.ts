@@ -36,29 +36,29 @@ export const API_ENDPOINTS = {
 
   // --- YouTube Music API wrapper ---
   /** Tìm kiếm trên YT Music. Params: ?query=keyword */
-  YTM_SEARCH: '/search',
+  YTM_SEARCH: '/ytmusic/search',
   /** Lấy danh sách search suggestions. Params: ?query=keyword */
-  YTM_SEARCH_SUGGESTIONS: '/search-suggestions',
+  YTM_SEARCH_SUGGESTIONS: '/ytmusic/search-suggestions',
   /** Thông tin một bài hát từ YT Music */
-  YTM_SONG_DETAIL: (id: string) => `/song/${id}`,
+  YTM_SONG_DETAIL: (id: string) => `/ytmusic/song/${id}`,
   /** Top songs theo khu vực / type */
-  YTM_TOP_SONGS: '/top-songs',
+  YTM_TOP_SONGS: '/ytmusic/top-songs',
   /** Get lyrics bài hát */
-  YTM_SONG_LYRICS: (id: string) => `/song/${id}/lyrics`,
+  YTM_SONG_LYRICS: (id: string) => `/ytmusic/song/${id}/lyrics`,
   /** Lấy URL Stream trực tiếp (nếu có hỗ trợ qua API Youtube) */
-  YTM_STREAM: (id: string) => `/stream/${id}`,
+  YTM_STREAM: (id: string) => `/ytmusic/stream/${id}`,
   
   // --- Album / Playlist / Artist (YT Music) ---
   /** Thông tin album */
-  YTM_ALBUM: (id: string) => `/album/${id}`,
+  YTM_ALBUM: (id: string) => `/ytmusic/album/${id}`,
   /** Thông tin playlist */
-  YTM_PLAYLIST: (id: string) => `/playlist/${id}`,
+  YTM_PLAYLIST: (id: string) => `/ytmusic/playlist/${id}`,
   /** Lấy thông tin playlist (watch) có kèm danh sách bài */
-  YTM_PLAYLIST_WITH_SONG: (id: string) => `/playlist-with-song/${id}`,
+  YTM_PLAYLIST_WITH_SONG: (id: string) => `/ytmusic/playlist-with-song/${id}`,
   /** Thông tin nghệ sĩ */
-  YTM_ARTIST: (id: string) => `/artist/${id}`,
+  YTM_ARTIST: (id: string) => `/ytmusic/artist/${id}`,
   /** Danh sách liên quan (related / up next) */
-  YTM_RELATED: (id: string) => `/related/${id}`,
+  YTM_RELATED: (id: string) => `/ytmusic/related/${id}`,
 
   // --- User / Local Custom Playlists (Giả định tuơng lai) ---
   USER_PROFILE: '/user/profile',
