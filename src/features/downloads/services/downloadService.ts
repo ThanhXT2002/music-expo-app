@@ -16,7 +16,12 @@ import { apiClient } from '@core/api/apiClient';
 import { API_ENDPOINTS } from '@core/api/endpoints';
 import { createLogger } from '@core/logger';
 import * as fileStorage from '@core/storage/fileStorage';
-import { saveOfflineSong, deleteOfflineSong } from '@core/data/database';
+import { 
+  saveOfflineSong, 
+  deleteOfflineSong, 
+  saveDownloadHistory, 
+  deleteDownloadHistory 
+} from '@core/data/database';
 import type { SongInfo, SongStatusResponse } from '../types';
 
 const logger = createLogger('download-service');
@@ -134,6 +139,7 @@ export async function downloadAndSave(
       localAudioUri: path!,
       duration: songInfo.duration,
     });
+    await saveDownloadHistory(songInfo.id);
     return path!;
   }
 
@@ -153,6 +159,7 @@ export async function downloadAndSave(
     localAudioUri: filePath,
     duration: songInfo.duration,
   });
+  await saveDownloadHistory(songInfo.id);
 
   logger.info('Tải và lưu thành công', { id: songInfo.id, filePath });
   return filePath;
@@ -161,12 +168,25 @@ export async function downloadAndSave(
 // ─── File Delete: Xoá bài hát offline ────────────────────────────────────────
 
 /**
- * Xoá bài hát offline: xoá file vật lý + xoá record SQLite.
+ * Xoá bài khỏi danh sách Downloads (Xóa Mềm / Soft Delete).
+ * CHỈ xoá khỏi bảng lịch sử tải, KHÔNG xoá file Mp3 và không xoá khỏi Library (offline_songs).
  *
  * @param songId - YouTube video ID
  */
 export async function removeDownloadedSong(songId: string): Promise<void> {
-  logger.info('Xoá bài hát offline', { songId });
+  logger.info('Xoá bài hát khỏi lịch sử tải (Soft Delete)', { songId });
+  await deleteDownloadHistory(songId);
+}
+
+/**
+ * Xoá VĨNH VIỄN bài hát offline (Xóa Cứng / Hard Delete).
+ * Gọi trên màn hình Library. Sẽ huỷ cả File Mp3, xoá khỏi Library và khỏi lịch sử Tải.
+ *
+ * @param songId - YouTube video ID
+ */
+export async function hardDeleteLocalSong(songId: string): Promise<void> {
+  logger.info('Xoá vĩnh viễn bài hát offline (Hard Delete)', { songId });
   await fileStorage.deleteTrackFile(songId);
   await deleteOfflineSong(songId);
+  await deleteDownloadHistory(songId);
 }

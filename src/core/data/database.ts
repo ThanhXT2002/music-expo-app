@@ -59,6 +59,27 @@ const MIGRATIONS: string[] = [
     thumbnailUrl TEXT,
     playedAt TEXT DEFAULT (datetime('now'))
   )`,
+
+  // ── Bảng 4: Lịch sử tải về (Soft Delete support) ──
+  `CREATE TABLE IF NOT EXISTS downloads (
+    id TEXT PRIMARY KEY NOT NULL,
+    downloadedAt TEXT DEFAULT (datetime('now'))
+  )`,
+
+  // ── Bảng 5: Quản lý Playlists ──
+  `CREATE TABLE IF NOT EXISTS playlists (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    createdAt TEXT DEFAULT (datetime('now'))
+  )`,
+
+  // ── Bảng 6: Bài hát trong Playlists ──
+  `CREATE TABLE IF NOT EXISTS playlist_songs (
+    playlistId TEXT NOT NULL,
+    songId TEXT NOT NULL,
+    addedAt TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (playlistId, songId)
+  )`,
 ];
 
 // ─── Singleton Connection ────────────────────────────────────────────────────
@@ -142,7 +163,7 @@ export interface PlayHistoryItem {
 
 // ─── Repository: Offline Songs ───────────────────────────────────────────────
 
-/** Lưu / cập nhật bài hát offline */
+/** Lưu / cập nhật bài hát offline (Thực thể lõi song + MP3) */
 export async function saveOfflineSong(song: LocalSong): Promise<void> {
   const db = await getDb();
   await db.runAsync(
@@ -152,16 +173,46 @@ export async function saveOfflineSong(song: LocalSong): Promise<void> {
   );
 }
 
-/** Lấy toàn bộ bài hát offline */
+/** Lấy toàn bộ bài hát offline (Master Library list) */
 export async function getOfflineSongs(): Promise<LocalSong[]> {
   const db = await getDb();
   return db.getAllAsync<LocalSong>('SELECT * FROM offline_songs ORDER BY rowid DESC');
 }
 
-/** Xoá bài hát offline theo ID */
+/** Xoá bài hát offline theo ID (Xoá thật / Hard Delete) */
 export async function deleteOfflineSong(id: string): Promise<void> {
   const db = await getDb();
   await db.runAsync('DELETE FROM offline_songs WHERE id = ?', [id]);
+}
+
+// ─── Repository: Downloads History ───────────────────────────────────────────
+
+/** Lưu vào bảng lịch sử downloads */
+export async function saveDownloadHistory(songId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `INSERT OR IGNORE INTO downloads (id) VALUES (?)`,
+    [songId]
+  );
+}
+
+/** 
+ * Lấy các bài hát offline CHỈ CÓ TRONG LỊCH SỬ TẢI VỀ (Downloads tab).
+ * Join với bảng offline_songs để lấy info thật.
+ */
+export async function getDownloadedSongs(): Promise<LocalSong[]> {
+  const db = await getDb();
+  return db.getAllAsync<LocalSong>(
+    `SELECT o.* FROM offline_songs o 
+     INNER JOIN downloads d ON o.id = d.id 
+     ORDER BY d.downloadedAt DESC`
+  );
+}
+
+/** Xoá bài khỏi danh sách tải về (Soft delete - vẫn giữ file gốc trong máy) */
+export async function deleteDownloadHistory(songId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM downloads WHERE id = ?', [songId]);
 }
 
 /** Đếm số bài hát offline */

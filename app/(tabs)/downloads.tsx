@@ -29,6 +29,7 @@ import {
 import { COLORS } from '@shared/constants/colors';
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing';
 import { EmptyState } from '@shared/components/EmptyState';
+import { TrackListItem } from '@shared/components/TrackListItem';
 import { useDownloads } from '@features/downloads/hooks/useDownloads';
 import { usePlayerStore } from '@features/player/store/playerStore';
 import * as AudioManager from '@core/audio/AudioManager';
@@ -196,56 +197,6 @@ function ActiveTaskItem({ task }: { task: DownloadItem }) {
   );
 }
 
-/** Offline song item (Pill-shaped Glass) */
-function OfflineSongItem({
-  song,
-  onPress,
-  onDelete,
-}: {
-  song: LocalSong;
-  onPress: () => void;
-  onDelete: () => void;
-}) {
-  return (
-    <Pressable onPress={onPress}>
-      {({ pressed }) => (
-        <View style={[styles.offlineItem, pressed && styles.offlineItemPressed]}>
-          {/* Cover tròn */}
-          <Image
-            source={{ uri: song.thumbnailUrl }}
-            style={styles.offlineCover}
-            contentFit="cover"
-          />
-
-          {/* Info */}
-          <View style={styles.offlineInfo}>
-            <Text style={styles.offlineTitle} numberOfLines={1}>{song.title}</Text>
-            <Text style={styles.offlineArtist} numberOfLines={1}>{song.artist}</Text>
-          </View>
-
-          {/* Actions */}
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation?.();
-              Alert.alert(
-                'Xoá bài hát',
-                `Bạn có chắc muốn xoá "${song.title}" khỏi thiết bị?`,
-                [
-                  { text: 'Huỷ', style: 'cancel' },
-                  { text: 'Xoá', style: 'destructive', onPress: onDelete },
-                ],
-              );
-            }}
-            hitSlop={12}
-            style={styles.deleteBtn}
-          >
-            <Trash2 size={16} color="#A0A0A0" />
-          </Pressable>
-        </View>
-      )}
-    </Pressable>
-  );
-}
 
 /** Search result item cũng dạng pill */
 function SearchResultItem({
@@ -297,28 +248,54 @@ export default function DownloadsScreen() {
 
   const handlePlayOffline = useCallback(async (song: LocalSong) => {
     try {
-      logger.info('Phát nhạc offline', { id: song.id, title: song.title });
+      logger.info('Phát nhạc offline và tạo playlist', { id: song.id, title: song.title });
 
-      // Map LocalSong → Track cho playerStore
-      playerStore.setCurrentTrack({
+      if (playerStore.currentTrack?.id === song.id) {
+        // Bài này đang phát / được chọn, tiếp tục play và trượt lên thui
+        if (!playerStore.isPlaying) {
+          await AudioManager.play();
+        }
+        router.push(`/player/${song.id}`);
+        return;
+      }
+
+      // Transform whole list to Tracks
+      const queueTracks = offlineSongs.map(s => ({
+        id: s.id,
+        title: s.title,
+        artist: s.artist ?? 'Khuyết danh',
+        artistId: '',
+        coverUrl: s.thumbnailUrl,
+        durationSeconds: s.duration,
+        streamUrl: s.localAudioUri,
+        isDownloaded: true,
+      }));
+
+      // Push playlist to queue
+      playerStore.setQueue(queueTracks);
+
+      // Find selected track
+      const track = queueTracks.find(t => t.id === song.id) || queueTracks[0] || {
         id: song.id,
         title: song.title,
-        artist: song.artist,
+        artist: song.artist ?? 'Khuyết danh',
         artistId: '',
         coverUrl: song.thumbnailUrl,
         durationSeconds: song.duration,
         streamUrl: song.localAudioUri,
         isDownloaded: true,
-      });
+      };
+
+      playerStore.setCurrentTrack(track);
 
       // Load vào AudioManager và phát
       await AudioManager.loadAndPlay({
-        id: song.id,
-        title: song.title,
-        artist: song.artist,
-        streamUrl: song.localAudioUri,
-        coverUrl: song.thumbnailUrl,
-        durationSeconds: song.duration,
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        streamUrl: track.streamUrl,
+        coverUrl: track.coverUrl,
+        durationSeconds: track.durationSeconds,
       });
 
       playerStore.setIsPlaying(true);
@@ -329,7 +306,7 @@ export default function DownloadsScreen() {
       logger.error('Lỗi phát nhạc offline', error);
       Alert.alert('Lỗi', 'Không thể phát bài hát này. Vui lòng thử lại.');
     }
-  }, [playerStore, router]);
+  }, [playerStore, router, offlineSongs]);
 
   /** Đọc clipboard và điền vào ô tìm kiếm */
   const handlePaste = useCallback(async () => {
@@ -425,16 +402,37 @@ export default function DownloadsScreen() {
         {offlineSongs.length > 0 ? (
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>NHẠC ĐÃ TẢI ({offlineSongs.length})</Text>
-            <View style={styles.sectionContent}>
-              {offlineSongs.map((song) => (
-                <OfflineSongItem
-                  key={song.id}
-                  song={song}
-                  onPress={() => handlePlayOffline(song)}
-                  onDelete={() => removeTrack(song.id)}
-                />
-              ))}
-            </View>
+              {offlineSongs.map((song) => {
+                const track = {
+                  id: song.id,
+                  title: song.title,
+                  artist: song.artist ?? 'Khuyết danh',
+                  artistId: '',
+                  coverUrl: song.thumbnailUrl,
+                  streamUrl: song.localAudioUri,
+                  durationSeconds: song.duration,
+                };
+                
+                return (
+                  <TrackListItem
+                    key={track.id}
+                    track={track}
+                    onPress={() => handlePlayOffline(song)}
+                    showDuration={false}
+                    rightIcon={<Trash2 size={16} color="#A0A0A0" />}
+                    onMenuPress={() => {
+                      Alert.alert(
+                        'Xoá bài hát',
+                        `Bạn có chắc muốn xoá "${track.title}" khỏi thiết bị?`,
+                        [
+                          { text: 'Huỷ', style: 'cancel' },
+                          { text: 'Xoá', style: 'destructive', onPress: () => removeTrack(track.id) },
+                        ],
+                      );
+                    }}
+                  />
+                );
+              })}
           </View>
         ) : (
           isEmpty && (
@@ -618,47 +616,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  // Offline Song Item (Pill Glass)
-  offlineItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.sm,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    backgroundColor: 'rgba(20, 15, 45, 0.7)',
-    shadowColor: '#B026FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  offlineItemPressed: {
-    backgroundColor: 'rgba(176, 38, 255, 0.12)',
-    transform: [{ scale: 0.98 }],
-  },
-  offlineCover: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.full,
-  },
-  offlineInfo: {
-    flex: 1,
-    marginLeft: SPACING.md,
-  },
-  offlineTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  offlineArtist: {
-    fontSize: FONT_SIZE.xs,
-    color: '#A0A0A0',
-    marginTop: 2,
-  },
-  deleteBtn: {
-    padding: SPACING.md,
-  },
 
   // Search Result Item
   searchResultItem: {

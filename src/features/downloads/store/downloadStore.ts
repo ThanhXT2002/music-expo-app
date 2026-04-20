@@ -13,7 +13,7 @@
 
 import { create } from 'zustand';
 import { createLogger } from '@core/logger';
-import { getOfflineSongs, type LocalSong } from '@core/data/database';
+import { getDownloadedSongs, type LocalSong } from '@core/data/database';
 import { getTotalDownloadSize } from '@core/storage/fileStorage';
 import {
   fetchSongInfo,
@@ -68,10 +68,10 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
   // ─── Load từ SQLite ───
   loadOfflineSongs: async () => {
     try {
-      const songs = await getOfflineSongs();
+      const songs = await getDownloadedSongs();
       const size = await getTotalDownloadSize();
       set({ offlineSongs: songs, totalSize: size });
-      logger.info('Loaded offline songs', { count: songs.length, sizeMB: (size / 1024 / 1024).toFixed(1) });
+      logger.info('Loaded downloaded songs mapping', { count: songs.length, sizeMB: (size / 1024 / 1024).toFixed(1) });
     } catch (error) {
       logger.error('Lỗi load offline songs', error);
     }

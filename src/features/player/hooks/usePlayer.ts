@@ -45,9 +45,68 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
       if (isNowPlaying !== storeIsPlaying) {
         usePlayerStore.getState().setIsPlaying(isNowPlaying);
       }
+
+      // Tự động chuyển bài khi kết thúc
+      if (state === 'stopped' && progressData.progress > 0) {
+        logger.info('Bài hát kết thúc — kiểm tra queue');
+        // Tránh loop vô hạn nếu queue rỗng
+        const { queue, repeatMode } = usePlayerStore.getState();
+        if (queue.length > 0 || repeatMode === 'one') {
+          handleNextTrack();
+        }
+      }
     });
 
     return () => unsubscribe();
+  }, [handleNextTrack]);
+
+  // ─── Core Hook Playback Logic ──────────────────────────────────────────
+
+  // Định nghĩa riêng handleNextTrack để tái sử dụng trong effect mà không gây dependency cycle
+  const handleNextTrack = useCallback(async (manual = false) => {
+    const s = usePlayerStore.getState();
+    if (!s.currentTrack) return;
+    
+    // Nếu chế độ lặp bài 1 bài và không phải user bấm Next thủ công
+    if (!manual && s.repeatMode === 'one') {
+      logger.info('Phát lại bài hiện tại (Repeat 1)');
+      await AudioManager.seekTo(0);
+      await AudioManager.play();
+      return;
+    }
+
+    if (s.queue.length === 0) {
+      logger.info('Queue trống — dừng phát');
+      return;
+    }
+
+    let nextTrack;
+    const currentIndex = s.queue.findIndex(t => t.id === s.currentTrack?.id);
+
+    if (s.shuffleEnabled && s.queue.length > 1) {
+      // Shuffle logic
+      let randomIndex = currentIndex;
+      while (randomIndex === currentIndex) {
+        randomIndex = Math.floor(Math.random() * s.queue.length);
+      }
+      nextTrack = s.queue[randomIndex];
+    } else {
+      // Normal logic
+      if (currentIndex === -1 || (currentIndex === s.queue.length - 1)) {
+        if (s.repeatMode === 'all' || manual) {
+          nextTrack = s.queue[0]; // Quay lại đầu list
+        } else {
+          logger.info('Queue đã hết — dừng phát');
+          return; // Hết list
+        }
+      } else {
+        nextTrack = s.queue[currentIndex + 1];
+      }
+    }
+
+    logger.info('Chuyển sang bài:', { title: nextTrack.title });
+    s.setCurrentTrack(nextTrack);
+    await AudioManager.loadAndPlay(nextTrack);
   }, []);
 
   // Tự động load và phát bài nếu được truyền trackId
@@ -78,13 +137,33 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
 
   const next = useCallback(async () => {
     logger.info('Chuyển bài tiếp theo');
-    // TODO: Tích hợp AudioQueue.getNextTrack()
-  }, []);
+    await handleNextTrack(true);
+  }, [handleNextTrack]);
 
   const previous = useCallback(async () => {
     logger.info('Quay lại bài trước');
-    // TODO: Tích hợp AudioQueue.getPreviousTrack()
-  }, []);
+    const s = usePlayerStore.getState();
+    if (!s.currentTrack || s.queue.length === 0) return;
+
+    // Nếu bài hát đang phát > 3s, click previous sẽ chỉ là tua lại đầu bài
+    if (currentTime > 3) {
+      await AudioManager.seekTo(0);
+      return;
+    }
+
+    const currentIndex = s.queue.findIndex(t => t.id === s.currentTrack?.id);
+    let prevTrack;
+
+    if (currentIndex <= 0) {
+      prevTrack = s.queue[s.queue.length - 1]; // Cuốn lại từ cuối
+    } else {
+      prevTrack = s.queue[currentIndex - 1];
+    }
+
+    logger.info('Quay lại chuyển bài:', { title: prevTrack.title });
+    s.setCurrentTrack(prevTrack);
+    await AudioManager.loadAndPlay(prevTrack);
+  }, [currentTime]);
 
   const seekTo = useCallback(async (position: number) => {
     logger.debug('Tua tới vị trí', { position });

@@ -13,6 +13,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Plus, Heart, Clock, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react-native';
 import { useLibrary } from '../hooks/useLibrary';
+import { usePlayerStore } from '@features/player/store/playerStore';
+import * as AudioManager from '@core/audio/AudioManager';
 import { COLORS } from '@shared/constants/colors';
 import { FONT_SIZE, SPACING, RADIUS, SHADOWS, LAYOUT } from '@shared/constants/spacing';
 import { GlassCard } from '@shared/components/GlassCard';
@@ -36,7 +38,7 @@ function LibraryFilterTabs({
     { key: 'tracks', label: 'Bài hát' },
     { key: 'playlists', label: 'Playlist' },
     { key: 'albums', label: 'Album' },
-    { key: 'downloads', label: 'Đã tải' },
+    { key: 'downloads', label: 'Yêu thích' },
   ];
 
   return (
@@ -159,8 +161,36 @@ function PlaylistItem({ title, trackCount, coverUrl, onPress, isSelected = false
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { tracks, isLoading } = useLibrary();
+  const { tracks, isLoading, removeTrack } = useLibrary();
+  const playerStore = usePlayerStore();
   const [activeTab, setActiveTab] = useState<LibraryTab>('tracks');
+
+  const handlePlayTrack = useCallback(async (track: Track) => {
+    // Truy Cập Trang Player mà không restart nếu bấm trúng bài đang phát/pause
+    if (playerStore.currentTrack?.id === track.id) {
+      if (!playerStore.isPlaying) {
+        await AudioManager.play();
+      }
+      router.push(`/player/${track.id}`);
+      return;
+    }
+
+    // Đẩy toàn bộ màn hình Library vào Queue
+    playerStore.setQueue(tracks);
+    playerStore.setCurrentTrack(track);
+
+    await AudioManager.loadAndPlay({
+      id: track.id,
+      title: track.title,
+      artist: track.artist,
+      streamUrl: track.streamUrl || '',
+      coverUrl: track.coverUrl,
+      durationSeconds: track.durationSeconds,
+    });
+
+    playerStore.setIsPlaying(true);
+    router.push(`/player/${track.id}`);
+  }, [tracks, playerStore, router]);
 
   return (
     <View style={styles.container}>
@@ -174,57 +204,57 @@ export default function LibraryScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header (Back, Title, Heart) */}
-        <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
-          <Pressable style={styles.iconButton}>
-            <ChevronLeft size={22} color="#FFFFFF" />
-          </Pressable>
-          <Text style={styles.headerTitleCenter}>Thư viện</Text>
-          <Pressable style={styles.iconButton}>
-            <Heart size={20} color="#FFFFFF" />
-          </Pressable>
-        </View>
-
-        {/* Hero Section: Nhạc của bạn + Thêm mới */}
-        <View style={styles.myMusicRow}>
-          <Text style={styles.myMusicTitle}>Nhạc của bạn</Text>
-          <Pressable style={styles.addBtn} onPress={() => router.push('/playlist/create' as any)}>
-            <Text style={styles.addBtnText}>Thêm mới</Text>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}>
+          <Text style={styles.headerTitleLeft}>Thư viện</Text>
+          <Pressable style={styles.iconButton} onPress={() => router.push('/playlist/create' as any)}>
+            <Plus size={20} color="#FFFFFF" />
           </Pressable>
         </View>
 
         {/* Filter Tabs */}
         <LibraryFilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* Playlists dạng Card độc lập */}
-        <View style={styles.listSection}>
-          <View style={styles.sectionContent}>
-            <PlaylistItem title="I'm Lovin' Myself" trackCount={12} onPress={() => {}} isSelected />
-            <PlaylistItem title="Workout Mix" trackCount={8} onPress={() => {}} />
-            <PlaylistItem title="Chill Night" trackCount={15} onPress={() => {}} />
-            <PlaylistItem title="Nhạc yêu thích" trackCount={tracks.length} onPress={() => {}} />
-          </View>
-        </View>
-
-        {/* Track list */}
-        {tracks.length > 0 && (
+        {/* Render nội dung theo Tab */}
+        {activeTab === 'playlists' && (
           <View style={styles.listSection}>
-            <Text style={styles.sectionTitle}>BÀI HÁT ĐÃ LƯU</Text>
-            {tracks.slice(0, 10).map((track) => (
+            <View style={styles.sectionContent}>
+              <PlaylistItem title="I'm Lovin' Myself" trackCount={12} onPress={() => {}} isSelected />
+              <PlaylistItem title="Workout Mix" trackCount={8} onPress={() => {}} />
+              <PlaylistItem title="Chill Night" trackCount={15} onPress={() => {}} />
+              <PlaylistItem title="Nhạc yêu thích" trackCount={tracks.length} onPress={() => {}} />
+            </View>
+          </View>
+        )}
+
+        {activeTab === 'tracks' && tracks.length > 0 && (
+          <View style={styles.listSection}>
+            {tracks.map((track) => (
               <TrackListItem
                 key={track.id}
                 track={track}
-                onPress={(t) => router.push(`/player/${t.id}`)}
-                onMenuPress={() => {}}
+                onPress={() => handlePlayTrack(track)}
+                onMenuPress={() => {
+                  removeTrack(track.id);
+                }}
               />
             ))}
           </View>
         )}
 
-        {!isLoading && tracks.length === 0 && (
+        {activeTab === 'tracks' && !isLoading && tracks.length === 0 && (
           <EmptyState
             icon="heart-outline"
-            title="Thư viện trống"
-            description="Hãy thích các bài hát để thêm vào thư viện."
+            title="Chưa có bài hát"
+            description="Hãy tải các bài hát để thêm vào thư viện offline của bạn."
+          />
+        )}
+
+        {(activeTab === 'albums' || activeTab === 'downloads') && (
+          <EmptyState
+            icon="folder-outline"
+            title="Chưa có dữ liệu"
+            description="Tính năng này đang được phát triển."
           />
         )}
 
@@ -264,36 +294,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitleCenter: {
-    fontSize: FONT_SIZE['xl'],
+  headerTitleLeft: {
+    fontSize: FONT_SIZE['2xl'],
     fontWeight: '700',
     color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  myMusicRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.lg,
-  },
-  myMusicTitle: {
-    fontSize: FONT_SIZE['xl'],
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  addBtn: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: 'rgba(176, 38, 255, 0.6)',
-    backgroundColor: 'rgba(176, 38, 255, 0.1)',
-  },
-  addBtnText: {
-    color: '#D270FF',
-    fontSize: FONT_SIZE.xs,
-    fontWeight: '600',
   },
 
   // Filter Tabs
