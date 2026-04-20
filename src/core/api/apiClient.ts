@@ -4,7 +4,7 @@
  *
  * Các tính năng:
  * - Tự động attach Access Token từ secureStorage
- * - Auto refresh token khi nhận 401, queue concurrent requests
+ * - Auto refresh token khi nhận 401 bằng Firebase re-auth
  * - Unwrap ApiResponse<T> → trả thẳng data (hoặc throw nếu status: false)
  * - Normalize mọi lỗi về AppError chuẩn
  *
@@ -24,6 +24,7 @@ import {
   clearSecureStorage,
   SECURE_KEYS,
 } from '@core/storage/secureStorage';
+import { auth } from '@shared/config/firebase';
 import type { ApiResponse, AppError } from '@shared/types/api';
 import { API_ENDPOINTS } from './endpoints';
 
@@ -144,8 +145,9 @@ axiosInstance.interceptors.response.use(
     // Bỏ qua auth endpoints và request đã retry
     const isAuthEndpoint =
       original.url?.includes(API_ENDPOINTS.AUTH_GOOGLE) ||
-      original.url?.includes(API_ENDPOINTS.AUTH_GOOGLE) ||
-      original.url?.includes(API_ENDPOINTS.AUTH_REFRESH);
+      original.url?.includes(API_ENDPOINTS.AUTH_SYNC) ||
+      original.url?.includes(API_ENDPOINTS.AUTH_REFRESH) ||
+      original.url?.includes(API_ENDPOINTS.AUTH_LOGOUT);
 
     if (error.response?.status !== 401 || original._retry || isAuthEndpoint) {
       logger.error('Request thất bại', { url: original?.url, status: error.response?.status });
@@ -168,26 +170,33 @@ axiosInstance.interceptors.response.use(
 
     original._retry = true;
     isRefreshing = true;
-    logger.info('Token hết hạn — bắt đầu refresh');
+    logger.info('Token hết hạn — bắt đầu refresh qua Firebase');
 
     try {
-      const refreshToken = await getSecureItem(SECURE_KEYS.REFRESH_TOKEN);
-      if (!refreshToken) throw new Error('Không có refresh token');
+      // Đợi Firebase restore session xong (đề phòng gọi api lúc app vừaa boot)
+      await auth.authStateReady();
+      
+      // Dùng Firebase currentUser để lấy fresh ID token
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('Không có Firebase session — cần đăng nhập lại');
 
-      // Gọi thẳng axios để tránh interceptor vòng lặp
-      const { data } = await axios.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
-        `${BASE_URL}${API_ENDPOINTS.AUTH_REFRESH}`,
-        { refreshToken },
+      // Force refresh Firebase token
+      const freshFirebaseToken = await firebaseUser.getIdToken(true);
+      logger.debug('Lấy Firebase token mới thành công');
+
+      // Re-sync với backend để lấy JWT mới
+      const { data } = await axios.post<ApiResponse<{ token: { access_token: string }; user: any }>>(
+        `${BASE_URL}/auth/sync`,
+        { token: freshFirebaseToken },
       );
 
-      const tokens = data.data!;
-      await setSecureItem(SECURE_KEYS.ACCESS_TOKEN, tokens.accessToken);
-      await setSecureItem(SECURE_KEYS.REFRESH_TOKEN, tokens.refreshToken);
+      const newAccessToken = data.data!.token.access_token;
+      await setSecureItem(SECURE_KEYS.ACCESS_TOKEN, newAccessToken);
 
-      logger.info('Refresh token thành công');
-      processQueue(null, tokens.accessToken);
+      logger.info('Refresh token thành công qua Firebase re-sync');
+      processQueue(null, newAccessToken);
 
-      if (original.headers) original.headers.Authorization = `Bearer ${tokens.accessToken}`;
+      if (original.headers) original.headers.Authorization = `Bearer ${newAccessToken}`;
       return axiosInstance(original);
     } catch (refreshError) {
       logger.error('Refresh token thất bại — xoá session', refreshError);

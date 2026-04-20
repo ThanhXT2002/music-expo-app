@@ -7,16 +7,18 @@
 import { Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useDownload } from '../hooks/useDownload';
+import type { SongInfo } from '../types';
 
 interface DownloadButtonProps {
-  trackId: string;
+  /** Metadata bài hát cần tải */
+  songInfo: SongInfo;
 }
 
 /**
  * DownloadButton — nút tải offline với icon trạng thái.
  */
-export function DownloadButton({ trackId }: DownloadButtonProps) {
-  const { status, download, remove } = useDownload(trackId);
+export function DownloadButton({ songInfo }: DownloadButtonProps) {
+  const { status, download, remove } = useDownload(songInfo);
 
   const handlePress = () => {
     if (status === 'completed') {
@@ -47,7 +49,7 @@ export function DownloadButton({ trackId }: DownloadButtonProps) {
   }
 
   return (
-    <Pressable onPress={handlePress} className="p-2 active:opacity-60">
+    <Pressable onPress={handlePress} style={{ padding: 8 }}>
       <Ionicons name={getIcon()} size={22} color={getColor()} />
     </Pressable>
   );

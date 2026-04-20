@@ -17,6 +17,10 @@ export interface UsePlayerReturn {
   currentTrack: import('@shared/types/track').Track | null;
   /** true nếu đang phát, false nếu đang dừng */
   isPlaying: boolean;
+  /** Chế độ shuffle đang bật? */
+  shuffleEnabled: boolean;
+  /** Chế độ lặp hiện tại */
+  repeatMode: RepeatMode;
   /** Tiến trình phát — giá trị 0–1 */
   progress: number;
   /** Vị trí phát hiện tại (giây) */
@@ -33,4 +37,8 @@ export interface UsePlayerReturn {
   previous: () => Promise<void>;
   /** Tua tới vị trí chỉ định (giây) */
   seekTo: (position: number) => Promise<void>;
+  /** Bật/tắt chế độ shuffle */
+  toggleShuffle: () => void;
+  /** Chuyển chế độ lặp: none → all → one → none */
+  toggleRepeat: () => void;
 }

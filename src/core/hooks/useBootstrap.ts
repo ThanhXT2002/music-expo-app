@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { setupAudioManager } from '@core/audio/AudioManager';
 import { setupBackgroundAudio } from '@core/audio/BackgroundAudio';
+import { initDb } from '@core/data/database';
 import { createLogger } from '@core/logger';
 import * as authService from '@features/auth/services/authService';
 import { useAuthStore } from '@features/auth/store/authStore';
@@ -45,15 +46,19 @@ export function useBootstrap(): void {
         logger.error('Khởi tạo audio engine thất bại', error);
       }
 
-      // Restore session — dùng getState() thay vì hook để KHÔNG subscribe
+      // SQLite database
       try {
-        const session = await authService.restoreSession();
-        const { setUser, setIsReady } = useAuthStore.getState();
-        if (session) setUser(session.user);
-        setIsReady(true);
+        await initDb();
+        logger.info('SQLite database sẵn sàng');
+      } catch (error) {
+        logger.error('Khởi tạo database thất bại', error);
+      }
+
+      // Restore session
+      try {
+        await useAuthStore.getState().restoreSession();
       } catch (error) {
         logger.error('Khôi phục session thất bại', error);
-        useAuthStore.getState().setIsReady(true);
       }
 
       // Ẩn splash sau khi session check xong

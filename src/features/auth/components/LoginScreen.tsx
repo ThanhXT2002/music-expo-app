@@ -16,6 +16,7 @@ import { useAuth } from '../hooks/useAuth';
 import { COLORS } from '@shared/constants/colors';
 import { GoogleIcon, FacebookIcon, AppleIcon } from '@shared/components/icons/SocialIcons';
 import { AppLogo } from '@shared/components/ui/AppLogo';
+import { SocialAuthButtons } from './SocialAuthButtons';
 import { AuthBackground } from '@shared/components/ui/AuthBackground';
 
 import { Mail, Lock, Eye, EyeOff, Fingerprint, ChevronRight } from 'lucide-react-native';
@@ -121,35 +122,7 @@ export default function LoginScreen() {
         </View>
 
         {/* Social Buttons */}
-        <View style={styles.socialList}>
-          <Pressable onPress={() => logger.info('Biometric')}>
-            <View style={[styles.socialBtn, { backgroundColor: '#1C1235', borderColor: '#6B3FA0' }]}>
-              <Fingerprint size={20} color={COLORS.primary} />
-              <Text style={[styles.socialBtnText, { color: COLORS.primary }]}>Đăng nhập bằng sinh trắc học</Text>
-            </View>
-          </Pressable>
-
-          <Pressable onPress={() => logger.info('Google login')}>
-            <View style={[styles.socialBtn, { backgroundColor: '#1A1A2E', borderColor: '#3D3558' }]}>
-              <GoogleIcon size={20} />
-              <Text style={styles.socialBtnText}>Tiếp tục với Google</Text>
-            </View>
-          </Pressable>
-
-          <Pressable onPress={() => logger.info('Facebook login')}>
-            <View style={[styles.socialBtn, { backgroundColor: '#121A30', borderColor: '#1E3A6E' }]}>
-              <FacebookIcon size={20} />
-              <Text style={[styles.socialBtnText, { color: '#5B9DFF' }]}>Tiếp tục với Facebook</Text>
-            </View>
-          </Pressable>
-
-          <Pressable onPress={() => logger.info('Apple login')}>
-            <View style={[styles.socialBtn, { backgroundColor: '#1A1A2E', borderColor: '#3D3558' }]}>
-              <AppleIcon size={20} />
-              <Text style={styles.socialBtnText}>Tiếp tục với Apple</Text>
-            </View>
-          </Pressable>
-        </View>
+        <SocialAuthButtons />
 
         {/* Register */}
         <View style={styles.registerRow}>

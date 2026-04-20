@@ -17,9 +17,9 @@ const logger = createLogger('use-library');
  * @returns Dữ liệu thư viện và trạng thái loading
  */
 export function useLibrary() {
-  const query = useQuery({
+  const query = useQuery<Track[]>({
     queryKey: ['library', 'tracks'],
-    queryFn: async () => {
+    queryFn: async (): Promise<Track[]> => {
       logger.info('API Thư viện tạm thời bị vô hiệu hoá');
       // Trả về mảng rỗng để không bị báo lỗi 404 cho tính năng đang phát triển
       return [];

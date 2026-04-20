@@ -15,6 +15,8 @@ export const API_ENDPOINTS = {
   AUTH_GOOGLE: '/auth/google',
   /** Làm mới token (nếu backend có hỗ trợ) */
   AUTH_REFRESH: '/auth/refresh',
+  /** Đồng bộ Firebase token → lấy App JWT */
+  AUTH_SYNC: '/auth/sync',
   /** Đăng xuất (thường client tự xoá token, nhưng có thể gọi BE nếu cần) */
   AUTH_LOGOUT: '/auth/logout',
 

@@ -10,16 +10,16 @@
 export interface User {
   /** ID duy nhất */
   id: string;
-  /** Tên hiển thị */
-  displayName: string;
   /** Email */
   email: string;
+  /** Tên hiển thị */
+  name: string;
   /** URL ảnh đại diện */
-  avatarUrl?: string;
-  /** Gói đăng ký: free hoặc premium */
-  subscription: 'free' | 'premium';
-  /** Ngày tạo tài khoản */
-  createdAt: string;
+  profile_picture?: string;
+  /** Phương thức đăng ký */
+  signup_provider?: string;
+  /** Trạng thái xác thực email */
+  is_verified?: boolean;
 }
 
 /**

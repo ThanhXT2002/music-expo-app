@@ -1,84 +1,87 @@
 /**
  * @file spacing.ts
- * @description Hệ thống khoảng cách chuẩn (spacing scale) cho toàn ứng dụng.
- * Dựa trên bộ đơn vị 4px — đảm bảo layout đều đặn và nhất quán.
+ * @description Design tokens — spacing, border radius, typography.
+ * Tập trung quản lý kích thước để đảm bảo nhất quán toàn app.
  * @module shared/constants
  */
 
-/**
- * Spacing scale — bội số 4px.
- * Giá trị tính bằng pixel, dùng trực tiếp trong style.
- *
- * @example
- * style={{ padding: SPACING.md, marginBottom: SPACING.lg }}
- */
+/** Spacing scale (px) */
 export const SPACING = {
-  /** 0px — không khoảng cách */
-  none: 0,
-  /** 2px — khoảng rất nhỏ */
-  xxs: 2,
-  /** 4px — khoảng cực nhỏ */
   xs: 4,
-  /** 8px — khoảng nhỏ */
   sm: 8,
-  /** 12px — khoảng vừa nhỏ */
   md: 12,
-  /** 16px — khoảng vừa — mặc định cho padding */
   lg: 16,
-  /** 20px — khoảng vừa lớn */
   xl: 20,
-  /** 24px — khoảng lớn */
   '2xl': 24,
-  /** 32px — khoảng rất lớn */
   '3xl': 32,
-  /** 40px — khoảng cực lớn */
   '4xl': 40,
-  /** 48px — khoảng khổng lồ */
   '5xl': 48,
-  /** 64px — khoảng đặc biệt */
-  '6xl': 64,
 } as const;
 
-/**
- * Border radius chuẩn.
- */
+/** Border radius tokens */
 export const RADIUS = {
-  /** 0px — không bo */
-  none: 0,
-  /** 4px — bo nhẹ */
-  sm: 4,
-  /** 8px — bo vừa */
-  md: 8,
-  /** 12px — bo lớn */
-  lg: 12,
-  /** 16px — bo rất lớn */
-  xl: 16,
-  /** 24px — bo cực lớn */
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
   '2xl': 24,
-  /** Bo tròn hoàn toàn */
   full: 9999,
 } as const;
 
-/**
- * Font sizes chuẩn.
- */
+/** Font size tokens */
 export const FONT_SIZE = {
-  /** 10px — caption nhỏ */
-  xs: 10,
-  /** 12px — caption */
-  sm: 12,
-  /** 14px — body nhỏ */
+  /** Caption / Helper text */
+  xs: 11,
+  /** Small labels */
+  sm: 13,
+  /** Body text */
   md: 14,
-  /** 16px — body mặc định */
+  /** Subtitles */
   lg: 16,
-  /** 18px — subtitle */
+  /** Section titles */
   xl: 18,
-  /** 20px — heading nhỏ */
-  '2xl': 20,
-  /** 24px — heading */
-  '3xl': 24,
-  /** 32px — heading lớn */
-  '4xl': 32,
-  /** 40px — display */
-  '5xl': 40,
+  /** Page titles */
+  '2xl': 22,
+  /** Hero titles */
+  '3xl': 28,
+  /** Display */
+  '4xl': 34,
+} as const;
+
+/** Consistent shadow for glass/glow effects */
+export const SHADOWS = {
+  /** Purple neon glow — dùng cho buttons, cards nổi bật */
+  purpleGlow: {
+    shadowColor: '#B026FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  /** Soft card shadow */
+  card: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  /** Ambient blur glow — player background */
+  ambient: {
+    shadowColor: '#B026FF',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 30,
+    elevation: 12,
+  },
+} as const;
+
+/** Tab bar & layout constants */
+export const LAYOUT = {
+  /** Chiều cao bottom tab bar pill */
+  tabBarHeight: 64,
+  /** Padding bottom cho content khi có tab bar */
+  tabBarOffset: 100,
+  /** Padding bottom cho content khi có MiniPlayer + tab bar */
+  miniPlayerOffset: 160,
 } as const;

@@ -13,113 +13,155 @@ import * as secureStorage from '@core/storage/secureStorage';
 import type { AuthSession } from '@shared/types/user';
 import type { LoginFormData, RegisterFormData } from '../types';
 
+// Firebase imports
+import { auth } from '@shared/config/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, updateProfile, signInWithCredential, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { LoginManager, AccessToken } from 'react-native-fbsdk-next';
+
 const logger = createLogger('auth-service');
 
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+logger.info(`[DEBUG] webClientId = "${WEB_CLIENT_ID}"`);
+
+GoogleSignin.configure({
+  webClientId: WEB_CLIENT_ID,
+});
+
 /**
- * Lưu tokens vào secureStorage sau khi đăng nhập / đăng ký.
- * Axios interceptor sẽ tự đọc ACCESS_TOKEN khi gửi request tiếp theo.
- *
- * @param session - Phiên đăng nhập từ API
+ * Gửi Firebase Token lên BE để lấy App JWT.
  */
-async function persistSession(session: AuthSession): Promise<void> {
+async function syncTokenWithBackend(firebaseIdToken: string): Promise<AuthSession> {
+  const response = await apiClient.post<any>('/auth/sync', {
+    token: firebaseIdToken
+  });
+
+  const payload = response.data.data;
+
+  const session: AuthSession = {
+    accessToken: payload.token.access_token,
+    refreshToken: '',
+    expiresAt: '',
+    user: payload.user
+  };
+
   await secureStorage.setSecureItem(secureStorage.SECURE_KEYS.ACCESS_TOKEN, session.accessToken);
-  await secureStorage.setSecureItem(secureStorage.SECURE_KEYS.REFRESH_TOKEN, session.refreshToken);
-  await secureStorage.setSecureItem(secureStorage.SECURE_KEYS.USER_ID, session.user.id);
+  return session;
 }
 
-/**
- * Đăng nhập bằng email và mật khẩu.
- *
- * @param data - Email và mật khẩu
- * @returns Phiên đăng nhập (token + user info)
- * @throws {AppError} Khi thông tin đăng nhập sai hoặc server lỗi
- */
 export async function login(data: LoginFormData): Promise<AuthSession> {
-  logger.info('Đăng nhập', { email: data.email });
-  try {
-    const response = await apiClient.post<AuthSession>(API_ENDPOINTS.AUTH_GOOGLE, data);
-    const session = response.data;
-    await persistSession(session);
-    logger.info('Đăng nhập thành công', { userId: session.user.id });
-    return session;
-  } catch (error) {
-    logger.error('Đăng nhập thất bại', { email: data.email, error });
-    throw error;
-  }
+  logger.info('Đăng nhập bằng Email/Password qua Firebase');
+  const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+  const idToken = await userCredential.user.getIdToken(true);
+
+  return await syncTokenWithBackend(idToken);
 }
 
-/**
- * Đăng ký tài khoản mới.
- * Tự động đăng nhập sau khi đăng ký thành công.
- *
- * @param data - Thông tin đăng ký
- * @returns Phiên đăng nhập
- */
 export async function register(data: RegisterFormData): Promise<AuthSession> {
-  logger.info('Đăng ký tài khoản', { email: data.email });
-  try {
-    const response = await apiClient.post<AuthSession>(API_ENDPOINTS.AUTH_GOOGLE, {
-      displayName: data.displayName,
-      email: data.email,
-      password: data.password,
-    });
-    const session = response.data;
-    await persistSession(session);
-    logger.info('Đăng ký thành công', { userId: session.user.id });
-    return session;
-  } catch (error) {
-    logger.error('Đăng ký thất bại', { email: data.email, error });
-    throw error;
+  logger.info('Đăng ký bằng Email/Password qua Firebase');
+  const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+
+  // Cap nhat ten hien thi tren Firebase
+  if (data.displayName) {
+    await updateProfile(userCredential.user, { displayName: data.displayName });
   }
+
+  const idToken = await userCredential.user.getIdToken(true);
+  return await syncTokenWithBackend(idToken);
 }
 
-/**
- * Đăng xuất — gọi API rồi xoá toàn bộ session local.
- * Lỗi server không làm gián đoạn — vẫn xoá session local.
- */
+export async function forgotPassword(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email);
+}
+
 export async function logout(): Promise<void> {
   logger.info('Đăng xuất');
   try {
-    await apiClient.post(API_ENDPOINTS.AUTH_LOGOUT);
-  } catch {
-    // Vẫn đăng xuất local dù server lỗi
-    logger.warn('Gọi API logout thất bại — vẫn xoá session local');
+    await auth.signOut();
+  } catch (e) {
+    logger.warn('Lỗi Firebase signOut', e);
   }
   await secureStorage.clearSecureStorage();
-  logger.info('Đăng xuất hoàn tất');
 }
 
 /**
- * Khôi phục session từ secureStorage khi mở lại app.
- * Nếu token còn hợp lệ → trả về user info.
- * Nếu không → xoá storage và trả về null.
- *
- * @returns AuthSession nếu còn hợp lệ, null nếu cần đăng nhập lại
+ * Khoi phuc session local.
+ * Neu co token -> BE verify tra ve user info.
  */
 export async function restoreSession(): Promise<AuthSession | null> {
   logger.info('Khôi phục session');
-  const token = await secureStorage.getSecureItem(secureStorage.SECURE_KEYS.ACCESS_TOKEN);
+  const token = await secureStorage.getSecureItem('ACCESS_TOKEN');
 
   if (!token) {
-    logger.debug('Không có token — cần đăng nhập');
     return null;
   }
 
   try {
-    // Axios interceptor tự attach token từ secureStorage
-    const response = await apiClient.get<AuthSession['user']>(API_ENDPOINTS.USER_PROFILE);
-    const refreshToken = await secureStorage.getSecureItem(secureStorage.SECURE_KEYS.REFRESH_TOKEN);
+    // API '/users/me' can BE config endpoint de GET profile
+    const response = await apiClient.get<any>('/users/me');
 
-    logger.info('Khôi phục session thành công', { userId: response.data.id });
     return {
       accessToken: token,
-      refreshToken: refreshToken ?? '',
+      refreshToken: '',
       expiresAt: '',
-      user: response.data,
+      user: response.data.data,
     };
   } catch (error) {
-    logger.warn('Token không hợp lệ — xoá session', error);
+    logger.warn('Token hết hạn hoặc server lỗi — xoá session');
     await secureStorage.clearSecureStorage();
     return null;
   }
+}
+
+export async function loginWithGoogle(): Promise<AuthSession> {
+  logger.info('Đăng nhập bằng Google Account');
+  
+  // 1. Kích hoạt Check & lấy Google Token từ thiết bị
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  const response = await GoogleSignin.signIn();
+  
+  if (!response.data?.idToken) {
+    throw new Error('Không lấy được Google ID Token');
+  }
+
+  // 2. Wrap thành Firebase Credential
+  const credential = GoogleAuthProvider.credential(response.data.idToken);
+
+  // 3. Đăng nhập Firebase
+  const userCredential = await signInWithCredential(auth, credential);
+  
+  // 4. Lấy Firebase Token mới
+  const firebaseToken = await userCredential.user.getIdToken(true);
+  
+  // 5. Gửi sang FastAPI Backend để lấy JWT và sync data
+  return await syncTokenWithBackend(firebaseToken);
+}
+
+export async function loginWithFacebook(): Promise<AuthSession> {
+  logger.info('Đăng nhập bằng Facebook Account');
+
+  // 1. Mở Cửa sổ uỷ quyền trên hệ thống Native
+  const result = await LoginManager.logInWithPermissions(['public_profile', 'email']);
+  
+  if (result.isCancelled) {
+    throw new Error('Đăng nhập Facebook bị huỷ');
+  }
+
+  // 2. Lấy Access Token từ Native
+  const data = await AccessToken.getCurrentAccessToken();
+  if (!data) {
+    throw new Error('Không lấy được Facebook Access Token');
+  }
+
+  // 3. Wrap vào Firebase Credential
+  const credential = FacebookAuthProvider.credential(data.accessToken);
+
+  // 4. Xác nhận Đăng nhập với Firebase
+  const userCredential = await signInWithCredential(auth, credential);
+  
+  // 5. Lấy Firebase Token mới
+  const firebaseToken = await userCredential.user.getIdToken(true);
+  
+  // 6. Chuyển sang Backend Đồng bộ Data
+  return await syncTokenWithBackend(firebaseToken);
 }

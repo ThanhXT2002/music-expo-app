@@ -3,6 +3,8 @@
  * @description Singleton quản lý toàn bộ audio playback của ứng dụng.
  * Bọc expo-av, cung cấp API thống nhất cho play/pause/seek/volume.
  *
+ * Fix: Track lastProgress để notifyListeners không reset progress về 0.
+ *
  * ⚠ QUAN TRỌNG: Chỉ có một instance duy nhất toàn app — không khởi tạo lại.
  * @module core/audio
  */
@@ -21,6 +23,14 @@ let currentTrack: AudioTrack | null = null;
 
 /** Trạng thái phát nhạc */
 let playbackState: PlaybackState = 'idle';
+
+/** Progress gần nhất — dùng khi notifyListeners */
+let lastProgress: PlaybackProgress = {
+  currentTime: 0,
+  duration: 0,
+  progress: 0,
+  buffered: 0,
+};
 
 /** Callback khi trạng thái phát thay đổi */
 type PlaybackCallback = (state: PlaybackState, progress: PlaybackProgress) => void;
@@ -65,12 +75,19 @@ export async function loadAndPlay(track: AudioTrack): Promise<void> {
       currentSound = null;
     }
 
+    // Reset progress cho bài mới
+    lastProgress = { currentTime: 0, duration: 0, progress: 0, buffered: 0 };
+
     playbackState = 'loading';
     notifyListeners();
 
     const { sound } = await Audio.Sound.createAsync(
       { uri: track.streamUrl },
-      { shouldPlay: true },
+      {
+        shouldPlay: true,
+        // Cấu hình cập nhật tiến trình mỗi 250ms thay vì mặc định 500ms
+        progressUpdateIntervalMillis: 250,
+      },
       onPlaybackStatusUpdate,
     );
 
@@ -135,6 +152,8 @@ export async function seekTo(positionSeconds: number): Promise<void> {
  */
 export function subscribe(callback: PlaybackCallback): () => void {
   listeners.add(callback);
+  // Gửi state hiện tại ngay cho subscriber mới (giải quyết race condition)
+  callback(playbackState, lastProgress);
   return () => listeners.delete(callback);
 }
 
@@ -181,18 +200,16 @@ function onPlaybackStatusUpdate(status: AVPlaybackStatus): void {
       : 0,
   };
 
+  // Lưu lại progress gần nhất
+  lastProgress = progress;
+
   listeners.forEach((cb) => cb(playbackState, progress));
 }
 
 /**
  * Thông báo tất cả listeners về thay đổi trạng thái.
+ * Dùng lastProgress thay vì zeros.
  */
 function notifyListeners(): void {
-  const defaultProgress: PlaybackProgress = {
-    currentTime: 0,
-    duration: 0,
-    progress: 0,
-    buffered: 0,
-  };
-  listeners.forEach((cb) => cb(playbackState, defaultProgress));
+  listeners.forEach((cb) => cb(playbackState, lastProgress));
 }

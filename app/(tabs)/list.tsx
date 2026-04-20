@@ -1,9 +1,8 @@
-import { View, Text } from 'react-native';
+/**
+ * @file (tabs)/list.tsx
+ * @description Route tìm kiếm — thin wrapper import SearchScreen từ features.
+ * (File giữ tên "list" cho Expo Router, nhưng hiển thị Search tab)
+ * @module app/(tabs)
+ */
 
-export default function ListScreen() {
-  return (
-    <View className="flex-1 items-center justify-center bg-[#080316]">
-      <Text className="text-white text-xl">Danh sách Bài Hát</Text>
-    </View>
-  );
-}
+export { default } from '@features/search/components/SearchScreen';

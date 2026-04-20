@@ -1,6 +1,7 @@
 /**
  * @file useHome.ts
  * @description Hook tải dữ liệu trang chủ từ API.
+ * Lấy top songs và map thành HomeFeed structure.
  * @module features/home/hooks
  */
 
@@ -8,45 +9,92 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@core/api/apiClient';
 import { API_ENDPOINTS } from '@core/api/endpoints';
 import { createLogger } from '@core/logger';
-import type { HomeFeed } from '../types';
+import type { HomeFeed, FeaturedItem, RecommendedPlaylist } from '../types';
+import type { Track } from '@shared/types/track';
 
 const logger = createLogger('use-home');
 
 /**
+ * Chuyển đổi danh sách tracks từ API thành cấu trúc HomeFeed.
+ * Vì backend chỉ trả về flat array từ /ytmusic/top-songs,
+ * ta cần map sang các section khác nhau cho UI.
+ */
+function mapTracksToFeed(tracks: Track[]): HomeFeed {
+  // Featured: lấy 3 bài đầu làm banner
+  const featured: FeaturedItem[] = tracks.slice(0, 3).map((t, i) => ({
+    id: `featured-${t.id}`,
+    title: t.title,
+    subtitle: t.artist,
+    imageUrl: t.coverUrl || `https://picsum.photos/seed/banner${i}/800/400`,
+    type: 'track' as const,
+    targetId: t.id,
+  }));
+
+  // Top songs: lấy 6 bài tiếp theo
+  const recentlyPlayed = tracks.slice(0, 10);
+
+  // Playlist giả: nhóm theo nghệ sĩ
+  const artistMap = new Map<string, Track[]>();
+  tracks.forEach((t) => {
+    if (!artistMap.has(t.artist)) artistMap.set(t.artist, []);
+    artistMap.get(t.artist)!.push(t);
+  });
+  const recommendedPlaylists: RecommendedPlaylist[] = Array.from(artistMap.entries())
+    .slice(0, 5)
+    .map(([artist, artistTracks], i) => ({
+      id: `playlist-auto-${i}`,
+      title: `${artist} Mix`,
+      description: `Tuyển tập ${artist}`,
+      coverUrl: artistTracks[0]?.coverUrl || `https://picsum.photos/seed/playlist${i}/300/300`,
+      trackCount: artistTracks.length,
+    }));
+
+  return {
+    featured,
+    recentlyPlayed,
+    recommendedPlaylists,
+    suggestedArtists: [],
+    newReleases: [],
+  };
+}
+
+/**
  * Hook tải dữ liệu feed trang chủ.
- * Sử dụng TanStack Query để cache và quản lý trạng thái loading/error.
+ * Gọi /ytmusic/top-songs và map thành HomeFeed.
  *
  * @returns Dữ liệu trang chủ, trạng thái loading/error và hàm refetch
- *
- * @example
- * const { feed, isLoading, error, refetch } = useHome();
  */
-/**
- * Promise dùng chung để dedup request — đảm bảo chỉ 1 HTTP call dù TanStack Query
- * quyết định gọi queryFn bao nhiêu lần trong cùng 1 session.
- * Reset khi user pull-to-refresh (invalidateQueries).
- */
-let _topSongsRequest: Promise<HomeFeed> | null = null;
-
 export function useHome() {
-  const query = useQuery({
+  const query = useQuery<HomeFeed>({
     queryKey: ['home', 'feed'],
     queryFn: async () => {
       logger.info('Tải dữ liệu trang chủ');
-      if (!_topSongsRequest) {
-        _topSongsRequest = apiClient
-          .get<HomeFeed>(API_ENDPOINTS.YTM_TOP_SONGS)
-          .then(r => r.data)
-          .catch(err => {
-            _topSongsRequest = null; // reset để cho phép retry khi lỗi
-            throw err;
-          });
+      const response = await apiClient.get<any>(API_ENDPOINTS.YTM_TOP_SONGS);
+
+      // API /ytmusic/top-songs trả về ApiResponse, data là mảng tracks
+      const rawData = response.data?.data ?? response.data;
+
+      // Kiểm tra nếu rawData là array (flat tracks) thì map sang HomeFeed
+      if (Array.isArray(rawData)) {
+        const tracks: Track[] = rawData.map((item: any) => ({
+          id: item.videoId || item.id || String(Math.random()),
+          title: item.title || 'Unknown',
+          artist: item.artists?.[0]?.name || item.artist || 'Unknown',
+          artistId: item.artists?.[0]?.id || '',
+          album: item.album?.name || item.album || '',
+          durationSeconds: item.duration_seconds || 0,
+          coverUrl: item.thumbnails?.[item.thumbnails.length - 1]?.url
+            || item.coverUrl
+            || item.thumbnail
+            || `https://picsum.photos/seed/${item.videoId}/300/300`,
+        }));
+        return mapTracksToFeed(tracks);
       }
-      return await _topSongsRequest;
+
+      // Nếu rawData đã là HomeFeed format
+      return rawData as HomeFeed;
     },
-    // Không refetch khi focus lại app
     refetchOnWindowFocus: false,
-    // Không refetch khi kết nối lại mạng
     refetchOnReconnect: false,
   });
 

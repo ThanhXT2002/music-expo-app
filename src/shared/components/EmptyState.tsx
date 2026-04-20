@@ -4,9 +4,11 @@
  * @module shared/components
  */
 
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from './ui/Button';
+import { COLORS } from '../constants/colors';
+import { FONT_SIZE, SPACING } from '../constants/spacing';
 
 /**
  * Props của EmptyState.
@@ -26,15 +28,6 @@ interface EmptyStateProps {
 
 /**
  * EmptyState — hiển thị khi không có dữ liệu.
- *
- * @example
- * <EmptyState
- *   icon="musical-notes-outline"
- *   title="Chưa có bài hát nào"
- *   description="Hãy tìm kiếm và thêm bài hát yêu thích vào thư viện."
- *   actionLabel="Tìm kiếm"
- *   onAction={() => navigate('search')}
- * />
  */
 export function EmptyState({
   icon = 'albums-outline',
@@ -44,20 +37,46 @@ export function EmptyState({
   onAction,
 }: EmptyStateProps) {
   return (
-    <View className="flex-1 items-center justify-center px-8 py-16">
-      <Ionicons name={icon} size={64} color="#6B6B6B" />
+    <View style={styles.container}>
+      <Ionicons name={icon} size={64} color={COLORS.textMuted} />
 
-      <Text className="mt-4 text-center text-lg font-semibold text-[#EAEAEA]">{title}</Text>
+      <Text style={styles.title}>{title}</Text>
 
       {description && (
-        <Text className="mt-2 text-center text-sm text-[#A0A0A0]">{description}</Text>
+        <Text style={styles.description}>{description}</Text>
       )}
 
       {actionLabel && onAction && (
-        <View className="mt-6">
+        <View style={styles.buttonWrapper}>
           <Button title={actionLabel} onPress={onAction} />
         </View>
       )}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING['3xl'],
+  },
+  title: {
+    marginTop: SPACING.lg,
+    textAlign: 'center',
+    fontSize: FONT_SIZE.lg,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+  },
+  description: {
+    marginTop: SPACING.sm,
+    textAlign: 'center',
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textMuted,
+  },
+  buttonWrapper: {
+    marginTop: SPACING.xl,
+  },
+});

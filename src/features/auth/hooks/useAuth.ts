@@ -12,64 +12,78 @@ import type { LoginFormData, RegisterFormData } from '../types';
 
 const logger = createLogger('use-auth');
 
-/**
- * Hook quản lý toàn bộ luồng xác thực.
- *
- * @returns User info, trạng thái và các hàm auth
- */
 export function useAuth() {
-  const { user, isReady, isLoading, setUser, setIsReady, setIsLoading } = useAuthStore();
+  const { user, isAuthenticated, isLoading, setAuth, logout: storeLogout, restoreSession: storeRestoreSession } = useAuthStore();
 
   const login = useCallback(async (data: LoginFormData) => {
-    setIsLoading(true);
+    useAuthStore.setState({ isLoading: true });
     try {
       const session = await authService.login(data);
-      setUser(session.user);
+      await setAuth(session.accessToken, session.user);
       logger.info('Đăng nhập qua hook thành công');
     } finally {
-      setIsLoading(false);
+      useAuthStore.setState({ isLoading: false });
     }
-  }, [setUser, setIsLoading]);
+  }, [setAuth]);
 
   const register = useCallback(async (data: RegisterFormData) => {
-    setIsLoading(true);
+    useAuthStore.setState({ isLoading: true });
     try {
       const session = await authService.register(data);
-      setUser(session.user);
+      await setAuth(session.accessToken, session.user);
       logger.info('Đăng ký qua hook thành công');
     } finally {
-      setIsLoading(false);
+      useAuthStore.setState({ isLoading: false });
     }
-  }, [setUser, setIsLoading]);
+  }, [setAuth]);
 
   const logout = useCallback(async () => {
-    await authService.logout();
-    setUser(null);
-    logger.info('Đăng xuất qua hook thành công');
-  }, [setUser]);
+    useAuthStore.setState({ isLoading: true });
+    try {
+      await authService.logout();
+      await storeLogout();
+      logger.info('Đăng xuất qua hook thành công');
+    } finally {
+      useAuthStore.setState({ isLoading: false });
+    }
+  }, [storeLogout]);
 
   const restoreSession = useCallback(async () => {
     logger.info('Khôi phục session khi mở app');
+    await storeRestoreSession();
+  }, [storeRestoreSession]);
+
+  const loginWithGoogle = useCallback(async () => {
+    useAuthStore.setState({ isLoading: true });
     try {
-      const session = await authService.restoreSession();
-      if (session) {
-        setUser(session.user);
-      }
-    } catch (error) {
-      logger.error('Khôi phục session thất bại', error);
+      const session = await authService.loginWithGoogle();
+      await setAuth(session.accessToken, session.user);
+      logger.info('Đăng nhập Google qua hook thành công');
     } finally {
-      setIsReady(true);
+      useAuthStore.setState({ isLoading: false });
     }
-  }, [setUser, setIsReady]);
+  }, [setAuth]);
+
+  const loginWithFacebook = useCallback(async () => {
+    useAuthStore.setState({ isLoading: true });
+    try {
+      const session = await authService.loginWithFacebook();
+      await setAuth(session.accessToken, session.user);
+      logger.info('Đăng nhập Facebook qua hook thành công');
+    } finally {
+      useAuthStore.setState({ isLoading: false });
+    }
+  }, [setAuth]);
 
   return {
     user,
-    isAuthenticated: !!user,
-    isReady,
+    isAuthenticated,
     isLoading,
     login,
     register,
     logout,
     restoreSession,
+    loginWithGoogle,
+    loginWithFacebook,
   };
 }
