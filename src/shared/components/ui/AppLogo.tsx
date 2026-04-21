@@ -5,16 +5,16 @@
  * @module shared/components/ui
  */
 
-import { Image, StyleSheet, View, ViewStyle } from 'react-native';
+import { Image, StyleSheet, View, ViewStyle } from 'react-native'
 
 /** Đường dẫn logo — import tĩnh để Metro bundler đóng gói */
-const LOGO_SOURCE = require('../../../../assets/images/logo.png');
+const LOGO_SOURCE = require('../../../../assets/images/logo.png')
 
 interface AppLogoProps {
   /** Kích thước logo (width & height) */
-  size?: number;
+  size?: number
   /** Style bổ sung cho container */
-  style?: ViewStyle;
+  style?: ViewStyle
 }
 
 /**
@@ -27,18 +27,14 @@ interface AppLogoProps {
 export function AppLogo({ size = 80, style }: AppLogoProps) {
   return (
     <View style={[styles.container, style]}>
-      <Image
-        source={LOGO_SOURCE}
-        style={{ width: size, height: size }}
-        resizeMode="contain"
-      />
+      <Image source={LOGO_SOURCE} style={{ width: size, height: size }} resizeMode='contain' />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    justifyContent: 'center'
+  }
+})

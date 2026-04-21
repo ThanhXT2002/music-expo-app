@@ -5,11 +5,11 @@
  * @module core/notifications
  */
 
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
-import { createLogger } from '@core/logger';
+import * as Notifications from 'expo-notifications'
+import { Platform } from 'react-native'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('notifications');
+const logger = createLogger('notifications')
 
 /**
  * Cấu hình cách hiển thị notification khi app đang mở (foreground).
@@ -20,9 +20,9 @@ Notifications.setNotificationHandler({
     shouldPlaySound: false,
     shouldSetBadge: false,
     shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+    shouldShowList: true
+  })
+})
 
 /**
  * Xin quyền gửi notification từ người dùng.
@@ -31,24 +31,24 @@ Notifications.setNotificationHandler({
  * @returns true nếu được cấp quyền, false nếu bị từ chối
  */
 export async function requestPermissions(): Promise<boolean> {
-  logger.info('Xin quyền notification');
+  logger.info('Xin quyền notification')
 
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  const { status: existingStatus } = await Notifications.getPermissionsAsync()
 
   if (existingStatus === 'granted') {
-    logger.debug('Quyền notification đã được cấp trước đó');
-    return true;
+    logger.debug('Quyền notification đã được cấp trước đó')
+    return true
   }
 
-  const { status } = await Notifications.requestPermissionsAsync();
+  const { status } = await Notifications.requestPermissionsAsync()
 
   if (status === 'granted') {
-    logger.info('Người dùng đồng ý cấp quyền notification');
-    return true;
+    logger.info('Người dùng đồng ý cấp quyền notification')
+    return true
   }
 
-  logger.warn('Người dùng từ chối quyền notification', { status });
-  return false;
+  logger.warn('Người dùng từ chối quyền notification', { status })
+  return false
 }
 
 /**
@@ -62,16 +62,16 @@ export async function getExpoPushToken(): Promise<string | null> {
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Mặc định',
-        importance: Notifications.AndroidImportance.DEFAULT,
-      });
+        importance: Notifications.AndroidImportance.DEFAULT
+      })
     }
 
-    const tokenData = await Notifications.getExpoPushTokenAsync();
-    logger.info('Lấy push token thành công', { token: tokenData.data.slice(0, 20) + '...' });
-    return tokenData.data;
+    const tokenData = await Notifications.getExpoPushTokenAsync()
+    logger.info('Lấy push token thành công', { token: tokenData.data.slice(0, 20) + '...' })
+    return tokenData.data
   } catch (error) {
-    logger.error('Không thể lấy push token', error);
-    return null;
+    logger.error('Không thể lấy push token', error)
+    return null
   }
 }
 
@@ -85,16 +85,16 @@ export async function getExpoPushToken(): Promise<string | null> {
 export async function sendLocalNotification(
   title: string,
   body: string,
-  data?: Record<string, unknown>,
+  data?: Record<string, unknown>
 ): Promise<void> {
-  logger.debug('Gửi local notification', { title });
+  logger.debug('Gửi local notification', { title })
 
   await Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
-      data: data ?? {},
+      data: data ?? {}
     },
-    trigger: null, // Hiển thị ngay lập tức
-  });
+    trigger: null // Hiển thị ngay lập tức
+  })
 }

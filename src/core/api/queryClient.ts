@@ -5,10 +5,10 @@
  * @module core/api
  */
 
-import { QueryClient } from '@tanstack/react-query';
-import { createLogger } from '@core/logger';
+import { QueryClient } from '@tanstack/react-query'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('query-client');
+const logger = createLogger('query-client')
 
 /**
  * QueryClient singleton — dùng chung cho toàn app.
@@ -35,14 +35,13 @@ export const queryClient = new QueryClient({
       /** Không refetch khi app được focus lại */
       refetchOnWindowFocus: false,
       /** Không refetch khi kết nối lại mạng */
-      refetchOnReconnect: false,
+      refetchOnReconnect: false
     },
     mutations: {
       /** Callback xử lý lỗi toàn cục cho mutations */
       onError: (error) => {
-        logger.error('Mutation thất bại', { error });
-      },
-    },
-  },
-});
-
+        logger.error('Mutation thất bại', { error })
+      }
+    }
+  }
+})

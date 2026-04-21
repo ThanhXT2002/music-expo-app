@@ -5,36 +5,36 @@
  * @module features/player/store
  */
 
-import { create } from 'zustand';
-import { createLogger } from '@core/logger';
-import type { Track } from '@shared/types/track';
-import type { RepeatMode } from '../types';
+import { create } from 'zustand'
+import { createLogger } from '@core/logger'
+import type { Track } from '@shared/types/track'
+import type { RepeatMode } from '../types'
 
-const logger = createLogger('player-store');
+const logger = createLogger('player-store')
 
 /**
  * Cấu trúc state và actions của player store.
  */
 interface PlayerStore {
   /** Bài hát đang phát */
-  currentTrack: Track | null;
+  currentTrack: Track | null
   /** Danh sách bài chờ phát */
-  queue: Track[];
+  queue: Track[]
   /** Trạng thái đang phát/dừng */
-  isPlaying: boolean;
+  isPlaying: boolean
   /** Chế độ lặp */
-  repeatMode: RepeatMode;
+  repeatMode: RepeatMode
   /** Chế độ shuffle */
-  shuffleEnabled: boolean;
+  shuffleEnabled: boolean
 
   // --- Actions ---
-  setCurrentTrack: (track: Track | null) => void;
-  setIsPlaying: (isPlaying: boolean) => void;
-  setQueue: (tracks: Track[]) => void;
-  addToQueue: (track: Track) => void;
-  clearQueue: () => void;
-  setRepeatMode: (mode: RepeatMode) => void;
-  toggleShuffle: () => void;
+  setCurrentTrack: (track: Track | null) => void
+  setIsPlaying: (isPlaying: boolean) => void
+  setQueue: (tracks: Track[]) => void
+  addToQueue: (track: Track) => void
+  clearQueue: () => void
+  setRepeatMode: (mode: RepeatMode) => void
+  toggleShuffle: () => void
 }
 
 /**
@@ -50,44 +50,44 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   // --- Actions ---
   setCurrentTrack: (track) => {
-    logger.debug('Cập nhật track hiện tại', { trackId: track?.id ?? 'null' });
-    set({ currentTrack: track });
+    logger.debug('Cập nhật track hiện tại', { trackId: track?.id ?? 'null' })
+    set({ currentTrack: track })
   },
 
   setIsPlaying: (isPlaying) => {
-    logger.debug('Cập nhật trạng thái phát', { isPlaying });
-    set({ isPlaying });
+    logger.debug('Cập nhật trạng thái phát', { isPlaying })
+    set({ isPlaying })
   },
 
   setQueue: (tracks) => {
-    logger.info('Cập nhật queue', { total: tracks.length });
-    set({ queue: tracks });
+    logger.info('Cập nhật queue', { total: tracks.length })
+    set({ queue: tracks })
   },
 
   addToQueue: (track) => {
-    const currentQueue = get().queue;
+    const currentQueue = get().queue
     // Tránh thêm bài trùng vào queue
     if (currentQueue.some((t) => t.id === track.id)) {
-      logger.warn('Bài đã có trong queue — bỏ qua', { trackId: track.id });
-      return;
+      logger.warn('Bài đã có trong queue — bỏ qua', { trackId: track.id })
+      return
     }
-    logger.info('Thêm bài vào queue', { trackId: track.id, title: track.title });
-    set({ queue: [...currentQueue, track] });
+    logger.info('Thêm bài vào queue', { trackId: track.id, title: track.title })
+    set({ queue: [...currentQueue, track] })
   },
 
   clearQueue: () => {
-    logger.info('Xoá toàn bộ queue', { previousLength: get().queue.length });
-    set({ queue: [] });
+    logger.info('Xoá toàn bộ queue', { previousLength: get().queue.length })
+    set({ queue: [] })
   },
 
   setRepeatMode: (mode) => {
-    logger.debug('Đổi chế độ lặp', { from: get().repeatMode, to: mode });
-    set({ repeatMode: mode });
+    logger.debug('Đổi chế độ lặp', { from: get().repeatMode, to: mode })
+    set({ repeatMode: mode })
   },
 
   toggleShuffle: () => {
-    const newValue = !get().shuffleEnabled;
-    logger.debug('Đổi chế độ shuffle', { enabled: newValue });
-    set({ shuffleEnabled: newValue });
-  },
-}));
+    const newValue = !get().shuffleEnabled
+    logger.debug('Đổi chế độ shuffle', { enabled: newValue })
+    set({ shuffleEnabled: newValue })
+  }
+}))

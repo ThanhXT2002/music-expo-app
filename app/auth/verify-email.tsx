@@ -4,4 +4,4 @@
  * @module app/auth
  */
 
-export { default } from '@features/auth/components/VerifyEmailScreen';
+export { default } from '@features/auth/components/VerifyEmailScreen'

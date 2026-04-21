@@ -4,22 +4,22 @@
  * @module features/home
  */
 
-import type { Track, Album, Artist } from '@shared/types/track';
+import type { Track, Album, Artist } from '@shared/types/track'
 
 /**
  * Dữ liệu trang chủ — trả về từ API /home/feed.
  */
 export interface HomeFeed {
   /** Banner nổi bật hiển thị ở đầu trang */
-  featured: FeaturedItem[];
+  featured: FeaturedItem[]
   /** Danh sách bài hát nghe gần đây */
-  recentlyPlayed: Track[];
+  recentlyPlayed: Track[]
   /** Danh sách playlist gợi ý */
-  recommendedPlaylists: RecommendedPlaylist[];
+  recommendedPlaylists: RecommendedPlaylist[]
   /** Nghệ sĩ gợi ý */
-  suggestedArtists: Artist[];
+  suggestedArtists: Artist[]
   /** Album mới phát hành */
-  newReleases: Album[];
+  newReleases: Album[]
 }
 
 /**
@@ -27,17 +27,17 @@ export interface HomeFeed {
  */
 export interface FeaturedItem {
   /** ID duy nhất */
-  id: string;
+  id: string
   /** Tiêu đề banner */
-  title: string;
+  title: string
   /** Mô tả ngắn */
-  subtitle: string;
+  subtitle: string
   /** URL ảnh nền banner */
-  imageUrl: string;
+  imageUrl: string
   /** Loại nội dung: track | album | playlist */
-  type: 'track' | 'album' | 'playlist';
+  type: 'track' | 'album' | 'playlist'
   /** ID nội dung để navigate khi nhấn */
-  targetId: string;
+  targetId: string
 }
 
 /**
@@ -45,13 +45,13 @@ export interface FeaturedItem {
  */
 export interface RecommendedPlaylist {
   /** ID playlist */
-  id: string;
+  id: string
   /** Tên playlist */
-  title: string;
+  title: string
   /** Mô tả */
-  description: string;
+  description: string
   /** URL ảnh bìa */
-  coverUrl: string;
+  coverUrl: string
   /** Số lượng bài hát */
-  trackCount: number;
+  trackCount: number
 }

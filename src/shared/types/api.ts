@@ -24,17 +24,17 @@
  */
 export interface ApiResponse<T = unknown> {
   /** true = thành công, false = lỗi */
-  status: boolean;
+  status: boolean
   /** HTTP-like status code (200, 400, 401, 404, v.v.) */
-  code: number;
+  code: number
   /** Dữ liệu trả về — undefined khi lỗi */
-  data?: T;
+  data?: T
   /** Thông báo từ server */
-  message?: string;
+  message?: string
   /** Chi tiết lỗi validation — mảng field errors */
-  errors?: unknown;
+  errors?: unknown
   /** Thời điểm server xử lý request (ISO 8601) */
-  timestamp?: string;
+  timestamp?: string
 }
 
 // ─── Phân trang ───────────────────────────────────────────────────────────────
@@ -44,17 +44,17 @@ export interface ApiResponse<T = unknown> {
  */
 export interface PaginationMeta {
   /** Tổng số item */
-  total: number;
+  total: number
   /** Trang hiện tại (bắt đầu từ 1) */
-  page: number;
+  page: number
   /** Số item mỗi trang */
-  pageSize: number;
+  pageSize: number
   /** Tổng số trang */
-  totalPages: number;
+  totalPages: number
   /** Còn trang tiếp theo? */
-  hasNextPage: boolean;
+  hasNextPage: boolean
   /** Có trang trước? */
-  hasPreviousPage: boolean;
+  hasPreviousPage: boolean
 }
 
 /**
@@ -64,9 +64,9 @@ export interface PaginationMeta {
  */
 export interface PaginatedData<T> {
   /** Danh sách item trong trang hiện tại */
-  data: T[];
+  data: T[]
   /** Metadata phân trang */
-  meta: PaginationMeta;
+  meta: PaginationMeta
 }
 
 /**
@@ -78,7 +78,7 @@ export interface PaginatedData<T> {
  * const response = await apiClient.get<PaginatedApiResponse<Track>>('/tracks?page=1');
  * const { data: tracks, meta } = response.data!;
  */
-export type PaginatedApiResponse<T> = ApiResponse<PaginatedData<T>>;
+export type PaginatedApiResponse<T> = ApiResponse<PaginatedData<T>>
 
 // ─── Lỗi ─────────────────────────────────────────────────────────────────────
 
@@ -87,9 +87,9 @@ export type PaginatedApiResponse<T> = ApiResponse<PaginatedData<T>>;
  */
 export interface AppError {
   /** Thông báo lỗi thân thiện */
-  message: string;
+  message: string
   /** HTTP status code */
-  statusCode: number;
+  statusCode: number
   /** Mã lỗi nội bộ từ backend */
-  code?: string;
+  code?: string
 }

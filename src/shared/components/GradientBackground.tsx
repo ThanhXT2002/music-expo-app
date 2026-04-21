@@ -5,19 +5,19 @@
  * @module shared/components
  */
 
-import React from 'react';
-import { StyleSheet, type ViewStyle, type ColorValue } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react'
+import { StyleSheet, type ViewStyle, type ColorValue } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 
-const DEFAULT_COLORS: [string, string, string] = ['#0F0C29', '#1a1240', '#120d20'];
+const DEFAULT_COLORS: [string, string, string] = ['#0F0C29', '#1a1240', '#120d20']
 
 interface GradientBackgroundProps {
   /** Component con */
-  children: React.ReactNode;
+  children: React.ReactNode
   /** Style bổ sung */
-  style?: ViewStyle;
+  style?: ViewStyle
   /** Mảng màu gradient tuỳ chỉnh */
-  colors?: readonly [string, string, ...string[]];
+  colors?: readonly [string, string, ...string[]]
 }
 
 /**
@@ -28,20 +28,16 @@ interface GradientBackgroundProps {
  *   <Text>Nội dung trang</Text>
  * </GradientBackground>
  */
-export function GradientBackground({
-  children,
-  style,
-  colors = DEFAULT_COLORS,
-}: GradientBackgroundProps) {
+export function GradientBackground({ children, style, colors = DEFAULT_COLORS }: GradientBackgroundProps) {
   return (
     <LinearGradient colors={colors} style={[styles.gradient, style]} start={{ x: 0, y: 0 }} end={{ x: 0.5, y: 1 }}>
       {children}
     </LinearGradient>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   gradient: {
-    flex: 1,
-  },
-});
+    flex: 1
+  }
+})

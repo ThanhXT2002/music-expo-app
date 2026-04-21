@@ -5,41 +5,37 @@
  * @module shared/components
  */
 
-import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Play, Pause } from 'lucide-react-native';
-import { SHADOWS } from '@shared/constants/spacing';
+import { Pressable, StyleSheet, type ViewStyle } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Play, Pause } from 'lucide-react-native'
+import { SHADOWS } from '@shared/constants/spacing'
 
 interface PlayButtonProps {
   /** Đang phát hay dừng */
-  isPlaying?: boolean;
+  isPlaying?: boolean
   /** Callback khi nhấn */
-  onPress: () => void;
+  onPress: () => void
   /** Kích thước: sm(36), md(48), lg(64) */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg'
   /** Style bổ sung */
-  style?: ViewStyle;
+  style?: ViewStyle
 }
 
 const SIZES = {
   sm: { button: 36, icon: 16 },
   md: { button: 48, icon: 20 },
-  lg: { button: 64, icon: 28 },
-};
+  lg: { button: 64, icon: 28 }
+}
 
 /**
  * PlayButton — nút play/pause tròn với gradient neon và glow shadow.
  */
 export function PlayButton({ isPlaying = false, onPress, size = 'md', style }: PlayButtonProps) {
-  const dims = SIZES[size];
-  const IconComponent = isPlaying ? Pause : Play;
+  const dims = SIZES[size]
+  const IconComponent = isPlaying ? Pause : Play
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.wrapper, SHADOWS.purpleGlow, style]}
-      hitSlop={8}
-    >
+    <Pressable onPress={onPress} style={[styles.wrapper, SHADOWS.purpleGlow, style]} hitSlop={8}>
       <LinearGradient
         colors={['#B026FF', '#6C5CE7', '#872CA2']}
         start={{ x: 0, y: 0 }}
@@ -49,27 +45,22 @@ export function PlayButton({ isPlaying = false, onPress, size = 'md', style }: P
           {
             width: dims.button,
             height: dims.button,
-            borderRadius: dims.button / 2,
-          },
+            borderRadius: dims.button / 2
+          }
         ]}
       >
-        <IconComponent
-          size={dims.icon}
-          color="#FFFFFF"
-          fill="#FFFFFF"
-          strokeWidth={0}
-        />
+        <IconComponent size={dims.icon} color='#FFFFFF' fill='#FFFFFF' strokeWidth={0} />
       </LinearGradient>
     </Pressable>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    borderRadius: 999,
+    borderRadius: 999
   },
   gradient: {
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    justifyContent: 'center'
+  }
+})

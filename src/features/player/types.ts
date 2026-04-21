@@ -7,38 +7,38 @@
 /**
  * Chế độ lặp phát nhạc.
  */
-export type RepeatMode = 'none' | 'one' | 'all';
+export type RepeatMode = 'none' | 'one' | 'all'
 
 /**
  * Giá trị trả về của hook usePlayer.
  */
 export interface UsePlayerReturn {
   /** Bài hát đang phát, null nếu chưa chọn */
-  currentTrack: import('@shared/types/track').Track | null;
+  currentTrack: import('@shared/types/track').Track | null
   /** true nếu đang phát, false nếu đang dừng */
-  isPlaying: boolean;
+  isPlaying: boolean
   /** Chế độ shuffle đang bật? */
-  shuffleEnabled: boolean;
+  shuffleEnabled: boolean
   /** Chế độ lặp hiện tại */
-  repeatMode: RepeatMode;
+  repeatMode: RepeatMode
   /** Tiến trình phát — giá trị 0–1 */
-  progress: number;
+  progress: number
   /** Vị trí phát hiện tại (giây) */
-  currentTime: number;
+  currentTime: number
   /** Tổng thời lượng (giây) */
-  duration: number;
+  duration: number
   /** Phát bài hiện tại */
-  play: () => Promise<void>;
+  play: () => Promise<void>
   /** Dừng bài hiện tại */
-  pause: () => Promise<void>;
+  pause: () => Promise<void>
   /** Chuyển sang bài tiếp theo */
-  next: () => Promise<void>;
+  next: () => Promise<void>
   /** Quay lại bài trước */
-  previous: () => Promise<void>;
+  previous: () => Promise<void>
   /** Tua tới vị trí chỉ định (giây) */
-  seekTo: (position: number) => Promise<void>;
+  seekTo: (position: number) => Promise<void>
   /** Bật/tắt chế độ shuffle */
-  toggleShuffle: () => void;
+  toggleShuffle: () => void
   /** Chuyển chế độ lặp: none → all → one → none */
-  toggleRepeat: () => void;
+  toggleRepeat: () => void
 }

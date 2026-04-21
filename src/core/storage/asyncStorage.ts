@@ -5,10 +5,10 @@
  * @module core/storage
  */
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createLogger } from '@core/logger';
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('async-storage');
+const logger = createLogger('async-storage')
 
 /**
  * Lưu object vào AsyncStorage (tự động JSON.stringify).
@@ -18,12 +18,12 @@ const logger = createLogger('async-storage');
  */
 export async function setItem<T>(key: string, value: T): Promise<void> {
   try {
-    const jsonValue = JSON.stringify(value);
-    await AsyncStorage.setItem(key, jsonValue);
-    logger.debug('Lưu item thành công', { key });
+    const jsonValue = JSON.stringify(value)
+    await AsyncStorage.setItem(key, jsonValue)
+    logger.debug('Lưu item thành công', { key })
   } catch (error) {
-    logger.error('Không thể lưu item', { key, error });
-    throw error;
+    logger.error('Không thể lưu item', { key, error })
+    throw error
   }
 }
 
@@ -35,15 +35,15 @@ export async function setItem<T>(key: string, value: T): Promise<void> {
  */
 export async function getItem<T>(key: string): Promise<T | null> {
   try {
-    const jsonValue = await AsyncStorage.getItem(key);
+    const jsonValue = await AsyncStorage.getItem(key)
     if (jsonValue === null) {
-      logger.debug('Không tìm thấy item', { key });
-      return null;
+      logger.debug('Không tìm thấy item', { key })
+      return null
     }
-    return JSON.parse(jsonValue) as T;
+    return JSON.parse(jsonValue) as T
   } catch (error) {
-    logger.error('Không thể đọc item', { key, error });
-    return null;
+    logger.error('Không thể đọc item', { key, error })
+    return null
   }
 }
 
@@ -54,10 +54,10 @@ export async function getItem<T>(key: string): Promise<T | null> {
  */
 export async function removeItem(key: string): Promise<void> {
   try {
-    await AsyncStorage.removeItem(key);
-    logger.debug('Xoá item thành công', { key });
+    await AsyncStorage.removeItem(key)
+    logger.debug('Xoá item thành công', { key })
   } catch (error) {
-    logger.error('Không thể xoá item', { key, error });
+    logger.error('Không thể xoá item', { key, error })
   }
 }
 
@@ -65,11 +65,11 @@ export async function removeItem(key: string): Promise<void> {
  * Xoá toàn bộ dữ liệu AsyncStorage — dùng khi cần reset app.
  */
 export async function clearAll(): Promise<void> {
-  logger.info('Xoá toàn bộ AsyncStorage');
+  logger.info('Xoá toàn bộ AsyncStorage')
   try {
-    await AsyncStorage.clear();
-    logger.info('Xoá AsyncStorage thành công');
+    await AsyncStorage.clear()
+    logger.info('Xoá AsyncStorage thành công')
   } catch (error) {
-    logger.error('Không thể xoá AsyncStorage', error);
+    logger.error('Không thể xoá AsyncStorage', error)
   }
 }

@@ -4,4 +4,4 @@
  * @module app/auth
  */
 
-export { default } from '@features/auth/components/ForgotPasswordScreen';
+export { default } from '@features/auth/components/ForgotPasswordScreen'

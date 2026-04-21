@@ -5,14 +5,14 @@
  * @module features/home/hooks
  */
 
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@core/api/apiClient';
-import { API_ENDPOINTS } from '@core/api/endpoints';
-import { createLogger } from '@core/logger';
-import type { HomeFeed, FeaturedItem, RecommendedPlaylist } from '../types';
-import type { Track } from '@shared/types/track';
+import { useQuery } from '@tanstack/react-query'
+import { apiClient } from '@core/api/apiClient'
+import { API_ENDPOINTS } from '@core/api/endpoints'
+import { createLogger } from '@core/logger'
+import type { HomeFeed, FeaturedItem, RecommendedPlaylist } from '../types'
+import type { Track } from '@shared/types/track'
 
-const logger = createLogger('use-home');
+const logger = createLogger('use-home')
 
 /**
  * Chuyển đổi danh sách tracks từ API thành cấu trúc HomeFeed.
@@ -27,18 +27,18 @@ function mapTracksToFeed(tracks: Track[]): HomeFeed {
     subtitle: t.artist,
     imageUrl: t.coverUrl || `https://picsum.photos/seed/banner${i}/800/400`,
     type: 'track' as const,
-    targetId: t.id,
-  }));
+    targetId: t.id
+  }))
 
   // Top songs: lấy 6 bài tiếp theo
-  const recentlyPlayed = tracks.slice(0, 10);
+  const recentlyPlayed = tracks.slice(0, 10)
 
   // Playlist giả: nhóm theo nghệ sĩ
-  const artistMap = new Map<string, Track[]>();
+  const artistMap = new Map<string, Track[]>()
   tracks.forEach((t) => {
-    if (!artistMap.has(t.artist)) artistMap.set(t.artist, []);
-    artistMap.get(t.artist)!.push(t);
-  });
+    if (!artistMap.has(t.artist)) artistMap.set(t.artist, [])
+    artistMap.get(t.artist)!.push(t)
+  })
   const recommendedPlaylists: RecommendedPlaylist[] = Array.from(artistMap.entries())
     .slice(0, 5)
     .map(([artist, artistTracks], i) => ({
@@ -46,16 +46,16 @@ function mapTracksToFeed(tracks: Track[]): HomeFeed {
       title: `${artist} Mix`,
       description: `Tuyển tập ${artist}`,
       coverUrl: artistTracks[0]?.coverUrl || `https://picsum.photos/seed/playlist${i}/300/300`,
-      trackCount: artistTracks.length,
-    }));
+      trackCount: artistTracks.length
+    }))
 
   return {
     featured,
     recentlyPlayed,
     recommendedPlaylists,
     suggestedArtists: [],
-    newReleases: [],
-  };
+    newReleases: []
+  }
 }
 
 /**
@@ -68,11 +68,11 @@ export function useHome() {
   const query = useQuery<HomeFeed>({
     queryKey: ['home', 'feed'],
     queryFn: async () => {
-      logger.info('Tải dữ liệu trang chủ');
-      const response = await apiClient.get<any>(API_ENDPOINTS.YTM_TOP_SONGS);
+      logger.info('Tải dữ liệu trang chủ')
+      const response = await apiClient.get<any>(API_ENDPOINTS.YTM_TOP_SONGS)
 
       // API /ytmusic/top-songs trả về ApiResponse, data là mảng tracks
-      const rawData = response.data?.data ?? response.data;
+      const rawData = response.data?.data ?? response.data
 
       // Kiểm tra nếu rawData là array (flat tracks) thì map sang HomeFeed
       if (Array.isArray(rawData)) {
@@ -83,20 +83,21 @@ export function useHome() {
           artistId: item.artists?.[0]?.id || '',
           album: item.album?.name || item.album || '',
           durationSeconds: item.duration_seconds || 0,
-          coverUrl: item.thumbnails?.[item.thumbnails.length - 1]?.url
-            || item.coverUrl
-            || item.thumbnail
-            || `https://picsum.photos/seed/${item.videoId}/300/300`,
-        }));
-        return mapTracksToFeed(tracks);
+          coverUrl:
+            item.thumbnails?.[item.thumbnails.length - 1]?.url ||
+            item.coverUrl ||
+            item.thumbnail ||
+            `https://picsum.photos/seed/${item.videoId}/300/300`
+        }))
+        return mapTracksToFeed(tracks)
       }
 
       // Nếu rawData đã là HomeFeed format
-      return rawData as HomeFeed;
+      return rawData as HomeFeed
     },
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
+    refetchOnReconnect: false
+  })
 
   return {
     /** Dữ liệu feed trang chủ */
@@ -106,6 +107,6 @@ export function useHome() {
     /** Lỗi khi tải */
     error: query.error,
     /** Tải lại dữ liệu */
-    refetch: query.refetch,
-  };
+    refetch: query.refetch
+  }
 }

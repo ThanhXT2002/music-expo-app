@@ -5,10 +5,10 @@
  * @module core/storage
  */
 
-import * as SecureStore from 'expo-secure-store';
-import { createLogger } from '@core/logger';
+import * as SecureStore from 'expo-secure-store'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('secure-storage');
+const logger = createLogger('secure-storage')
 
 /**
  * Các key lưu trữ an toàn trong ứng dụng.
@@ -19,8 +19,8 @@ export const SECURE_KEYS = {
   /** JWT refresh token */
   REFRESH_TOKEN: 'refresh_token',
   /** ID user đang đăng nhập */
-  USER_ID: 'user_id',
-} as const;
+  USER_ID: 'user_id'
+} as const
 
 /**
  * Lưu giá trị vào secure storage.
@@ -30,11 +30,11 @@ export const SECURE_KEYS = {
  */
 export async function setSecureItem(key: string, value: string): Promise<void> {
   try {
-    await SecureStore.setItemAsync(key, value);
-    logger.debug('Lưu secure item thành công', { key });
+    await SecureStore.setItemAsync(key, value)
+    logger.debug('Lưu secure item thành công', { key })
   } catch (error) {
-    logger.error('Không thể lưu secure item', { key, error });
-    throw error;
+    logger.error('Không thể lưu secure item', { key, error })
+    throw error
   }
 }
 
@@ -46,12 +46,12 @@ export async function setSecureItem(key: string, value: string): Promise<void> {
  */
 export async function getSecureItem(key: string): Promise<string | null> {
   try {
-    const value = await SecureStore.getItemAsync(key);
-    logger.debug('Đọc secure item', { key, found: !!value });
-    return value;
+    const value = await SecureStore.getItemAsync(key)
+    logger.debug('Đọc secure item', { key, found: !!value })
+    return value
   } catch (error) {
-    logger.error('Không thể đọc secure item', { key, error });
-    return null;
+    logger.error('Không thể đọc secure item', { key, error })
+    return null
   }
 }
 
@@ -62,10 +62,10 @@ export async function getSecureItem(key: string): Promise<string | null> {
  */
 export async function deleteSecureItem(key: string): Promise<void> {
   try {
-    await SecureStore.deleteItemAsync(key);
-    logger.debug('Xoá secure item thành công', { key });
+    await SecureStore.deleteItemAsync(key)
+    logger.debug('Xoá secure item thành công', { key })
   } catch (error) {
-    logger.error('Không thể xoá secure item', { key, error });
+    logger.error('Không thể xoá secure item', { key, error })
   }
 }
 
@@ -73,8 +73,8 @@ export async function deleteSecureItem(key: string): Promise<void> {
  * Xoá toàn bộ dữ liệu bảo mật — dùng khi đăng xuất.
  */
 export async function clearSecureStorage(): Promise<void> {
-  logger.info('Xoá toàn bộ secure storage');
-  const keys = Object.values(SECURE_KEYS);
-  await Promise.all(keys.map((key) => deleteSecureItem(key)));
-  logger.info('Xoá secure storage thành công');
+  logger.info('Xoá toàn bộ secure storage')
+  const keys = Object.values(SECURE_KEYS)
+  await Promise.all(keys.map((key) => deleteSecureItem(key)))
+  logger.info('Xoá secure storage thành công')
 }

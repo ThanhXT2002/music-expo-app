@@ -6,12 +6,12 @@
 
 ## 📐 Nguyên tắc tổ chức
 
-| Nguyên tắc | Mô tả |
-|---|---|
-| **`app/`** chỉ chứa routes | Không đặt component hay logic ở đây |
-| **`src/features/`** là trung tâm | Mỗi feature tự chứa screen + hook + store + service |
-| **`src/shared/`** dùng chung | Chỉ đặt thứ gì dùng được ở ≥ 2 features |
-| **`src/core/`** là hạ tầng | Audio engine, API client, storage — không phụ thuộc feature |
+| Nguyên tắc                       | Mô tả                                                       |
+| -------------------------------- | ----------------------------------------------------------- |
+| **`app/`** chỉ chứa routes       | Không đặt component hay logic ở đây                         |
+| **`src/features/`** là trung tâm | Mỗi feature tự chứa screen + hook + store + service         |
+| **`src/shared/`** dùng chung     | Chỉ đặt thứ gì dùng được ở ≥ 2 features                     |
+| **`src/core/`** là hạ tầng       | Audio engine, API client, storage — không phụ thuộc feature |
 
 ---
 
@@ -210,14 +210,14 @@ npx expo install expo-notifications
 
 ## 🧩 Quy ước đặt tên file
 
-| Loại | Quy ước | Ví dụ |
-|---|---|---|
-| Screen component | `PascalCase + Screen` | `PlayerScreen.tsx` |
-| Hook | `camelCase + use` | `usePlayer.ts` |
-| Store (Zustand) | `camelCase + Store` | `playerStore.ts` |
-| Service | `camelCase + Service` | `playerService.ts` |
-| Types | `types.ts` | mỗi feature có riêng |
-| Shared UI | `PascalCase` | `TrackCard.tsx` |
+| Loại             | Quy ước               | Ví dụ                |
+| ---------------- | --------------------- | -------------------- |
+| Screen component | `PascalCase + Screen` | `PlayerScreen.tsx`   |
+| Hook             | `camelCase + use`     | `usePlayer.ts`       |
+| Store (Zustand)  | `camelCase + Store`   | `playerStore.ts`     |
+| Service          | `camelCase + Service` | `playerService.ts`   |
+| Types            | `types.ts`            | mỗi feature có riêng |
+| Shared UI        | `PascalCase`          | `TrackCard.tsx`      |
 
 ---
 

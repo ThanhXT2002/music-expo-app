@@ -49,7 +49,7 @@ export const API_ENDPOINTS = {
   YTM_SONG_LYRICS: (id: string) => `/ytmusic/song/${id}/lyrics`,
   /** Lấy URL Stream trực tiếp (nếu có hỗ trợ qua API Youtube) */
   YTM_STREAM: (id: string) => `/ytmusic/stream/${id}`,
-  
+
   // --- Album / Playlist / Artist (YT Music) ---
   /** Thông tin album */
   YTM_ALBUM: (id: string) => `/ytmusic/album/${id}`,
@@ -66,5 +66,5 @@ export const API_ENDPOINTS = {
   USER_PROFILE: '/user/profile',
   PLAYLISTS: '/playlists',
   PLAYLIST_DETAIL: (id: string) => `/playlists/${id}`,
-  PLAYLIST_TRACKS: (id: string) => `/playlists/${id}/tracks`,
-} as const;
+  PLAYLIST_TRACKS: (id: string) => `/playlists/${id}/tracks`
+} as const

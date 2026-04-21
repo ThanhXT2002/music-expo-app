@@ -4,17 +4,17 @@
  * @module features/library/store
  */
 
-import { create } from 'zustand';
-import { createLogger } from '@core/logger';
-import type { LibraryTab, SortBy } from '../types';
+import { create } from 'zustand'
+import { createLogger } from '@core/logger'
+import type { LibraryTab, SortBy } from '../types'
 
-const logger = createLogger('library-store');
+const logger = createLogger('library-store')
 
 interface LibraryStore {
-  activeTab: LibraryTab;
-  sortBy: SortBy;
-  setActiveTab: (tab: LibraryTab) => void;
-  setSortBy: (sort: SortBy) => void;
+  activeTab: LibraryTab
+  sortBy: SortBy
+  setActiveTab: (tab: LibraryTab) => void
+  setSortBy: (sort: SortBy) => void
 }
 
 export const useLibraryStore = create<LibraryStore>((set) => ({
@@ -22,12 +22,12 @@ export const useLibraryStore = create<LibraryStore>((set) => ({
   sortBy: 'recent',
 
   setActiveTab: (tab) => {
-    logger.debug('Chuyển tab thư viện', { tab });
-    set({ activeTab: tab });
+    logger.debug('Chuyển tab thư viện', { tab })
+    set({ activeTab: tab })
   },
 
   setSortBy: (sort) => {
-    logger.debug('Đổi cách sắp xếp', { sort });
-    set({ sortBy: sort });
-  },
-}));
+    logger.debug('Đổi cách sắp xếp', { sort })
+    set({ sortBy: sort })
+  }
+}))

@@ -4,83 +4,81 @@
  * @module app/(tabs)
  */
 
-import { View, Text, ScrollView, Pressable, StyleSheet, Switch, Alert } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { User, Bell, Palette, Shield, LogOut, ChevronRight, Info } from 'lucide-react-native';
-import { COLORS } from '@shared/constants/colors';
-import { useAuth } from '@features/auth/hooks/useAuth';
-import { GlassCard } from '@shared/components/GlassCard';
+import { View, ScrollView, Pressable, StyleSheet, Switch, Alert, Text } from 'react-native'
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { User, Bell, Palette, Shield, LogOut, ChevronRight, Info } from 'lucide-react-native'
+import { COLORS } from '@shared/constants/colors'
+import { FONT_SIZE, SPACING } from '@shared/constants/spacing'
+import { useAuth } from '@features/auth/hooks/useAuth'
+import { GlassCard } from '@shared/components/GlassCard'
 
 // ─── Settings Section Component ───────────────────────────────────────────────
 
 function SettingItem({
-  icon, title, subtitle, rightElement, onPress, danger
+  icon,
+  title,
+  subtitle,
+  rightElement,
+  onPress,
+  danger
 }: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-  rightElement?: React.ReactNode;
-  onPress?: () => void;
-  danger?: boolean;
+  icon: React.ReactNode
+  title: string
+  subtitle?: string
+  rightElement?: React.ReactNode
+  onPress?: () => void
+  danger?: boolean
 }) {
   return (
     <Pressable onPress={onPress} disabled={!onPress}>
       {({ pressed }) => (
-        <View style={[
-          styles.settingItem,
-          pressed && onPress && styles.settingItemPressed
-        ]}>
-          <View style={[styles.iconWrapper, danger && { backgroundColor: 'rgba(255, 65, 91, 0.1)' }]}>
-            {icon}
-          </View>
+        <View style={[styles.settingItem, pressed && onPress && styles.settingItemPressed]}>
+          <View style={[styles.iconWrapper, danger && { backgroundColor: 'rgba(255, 65, 91, 0.1)' }]}>{icon}</View>
           <View style={styles.itemTextContent}>
             <Text style={[styles.itemTitle, danger && { color: COLORS.error }]}>{title}</Text>
             {subtitle && <Text style={styles.itemSubtitle}>{subtitle}</Text>}
           </View>
-          {rightElement ? rightElement : (onPress && <ChevronRight size={20} color={COLORS.textMuted} />)}
+          {rightElement ? rightElement : onPress && <ChevronRight size={20} color={COLORS.textMuted} />}
         </View>
       )}
     </Pressable>
-  );
+  )
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function SettingsScreen() {
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const { user, logout } = useAuth();
+  const insets = useSafeAreaInsets()
+  const router = useRouter()
+  const { user, logout } = useAuth()
 
   const handleLogout = () => {
-    Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?',
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Đăng xuất',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            // Auth guard sẽ tự động đẩy về /auth/login
-          }
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?', [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Đăng xuất',
+        style: 'destructive',
+        onPress: async () => {
+          await logout()
+          // Auth guard sẽ tự động đẩy về /auth/login
         }
-      ]
-    );
-  };
+      }
+    ])
+  }
 
   return (
     <View style={styles.container}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}>
+        <Text style={styles.headerTitle}>Cài đặt</Text>
+      </View>
+
       <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 20, paddingBottom: 100 }
-        ]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.headerTitle}>Cài đặt</Text>
-
         {/* --- Profile Card --- */}
         {user && (
           <GlassCard style={styles.profileCardWrapper}>
@@ -103,13 +101,13 @@ export default function SettingsScreen() {
             <View style={styles.sectionContent}>
               <SettingItem
                 icon={<User size={20} color={COLORS.primary} />}
-                title="Thông tin cá nhân"
-                subtitle="Tên, Email, Sinh trắc học"
+                title='Thông tin cá nhân'
+                subtitle='Tên, Email, Sinh trắc học'
                 onPress={() => {}}
               />
               <SettingItem
                 icon={<Shield size={20} color={COLORS.success} />}
-                title="Quyền riêng tư"
+                title='Quyền riêng tư'
                 onPress={() => {}}
               />
             </View>
@@ -122,13 +120,13 @@ export default function SettingsScreen() {
             <View style={styles.sectionContent}>
               <SettingItem
                 icon={<Bell size={20} color={COLORS.warning} />}
-                title="Thông báo"
+                title='Thông báo'
                 rightElement={<Switch value={true} trackColor={{ true: COLORS.primary, false: COLORS.border }} />}
               />
               <SettingItem
                 icon={<Palette size={20} color={COLORS.info} />}
-                title="Chủ đề & Hiển thị"
-                subtitle="Ban đêm (Mặc định)"
+                title='Chủ đề & Hiển thị'
+                subtitle='Ban đêm (Mặc định)'
                 onPress={() => {}}
               />
             </View>
@@ -141,23 +139,22 @@ export default function SettingsScreen() {
             <View style={styles.sectionContent}>
               <SettingItem
                 icon={<Info size={20} color={COLORS.textSecondary} />}
-                title="Thông tin ứng dụng"
-                subtitle="Phiên bản 1.0.0"
+                title='Thông tin ứng dụng'
+                subtitle='Phiên bản 1.0.0'
                 onPress={() => {}}
               />
               <SettingItem
                 icon={<LogOut size={20} color={COLORS.error} />}
-                title="Đăng xuất"
+                title='Đăng xuất'
                 danger
                 onPress={handleLogout}
               />
             </View>
           </GlassCard>
         </View>
-
       </ScrollView>
     </View>
-  );
+  )
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -165,28 +162,30 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.background
+  },
+  header: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SPACING.lg
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginBottom: 24,
-    letterSpacing: -0.5,
+    fontSize: FONT_SIZE['2xl'],
+    fontWeight: '700',
+    color: COLORS.textPrimary
   },
 
   // Profile Card
   profileCardWrapper: {
     padding: 0,
-    marginBottom: 32,
+    marginBottom: 32
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 16
   },
   avatarPlaceholder: {
     width: 56,
@@ -195,31 +194,31 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 16
   },
   avatarText: {
     color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
   profileInfo: {
-    flex: 1,
+    flex: 1
   },
   profileName: {
     fontSize: 18,
     fontWeight: '700',
     color: COLORS.textPrimary,
     marginBottom: 4,
-    textTransform: 'capitalize',
+    textTransform: 'capitalize'
   },
   profileEmail: {
     fontSize: 14,
-    color: COLORS.textMuted,
+    color: COLORS.textMuted
   },
 
   // Sections
   section: {
-    marginBottom: 28,
+    marginBottom: 28
   },
   sectionTitle: {
     fontSize: 13,
@@ -227,14 +226,14 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     marginBottom: 12,
     marginLeft: 4,
-    letterSpacing: 1,
+    letterSpacing: 1
   },
   sectionCardWrapper: {
-    padding: 0,
+    padding: 0
   },
   sectionContent: {
     // GlassCard handles background and borders, so we just remove these
-    overflow: 'hidden',
+    overflow: 'hidden'
   },
 
   // Setting Item
@@ -243,10 +242,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.03)',
+    borderBottomColor: 'rgba(255,255,255,0.03)'
   },
   settingItemPressed: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.05)'
   },
   iconWrapper: {
     width: 40,
@@ -255,20 +254,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
+    marginRight: 14
   },
   itemTextContent: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   itemTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: COLORS.textPrimary,
+    color: COLORS.textPrimary
   },
   itemSubtitle: {
     fontSize: 13,
     color: COLORS.textMuted,
-    marginTop: 2,
-  },
-});
+    marginTop: 2
+  }
+})

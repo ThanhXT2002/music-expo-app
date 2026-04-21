@@ -9,17 +9,17 @@
  */
 export interface User {
   /** ID duy nhất */
-  id: string;
+  id: string
   /** Email */
-  email: string;
+  email: string
   /** Tên hiển thị */
-  name: string;
+  name: string
   /** URL ảnh đại diện */
-  profile_picture?: string;
+  profile_picture?: string
   /** Phương thức đăng ký */
-  signup_provider?: string;
+  signup_provider?: string
   /** Trạng thái xác thực email */
-  is_verified?: boolean;
+  is_verified?: boolean
 }
 
 /**
@@ -27,11 +27,11 @@ export interface User {
  */
 export interface AuthSession {
   /** Access token (JWT) */
-  accessToken: string;
+  accessToken: string
   /** Refresh token */
-  refreshToken: string;
+  refreshToken: string
   /** Thời gian hết hạn access token (ISO string) */
-  expiresAt: string;
+  expiresAt: string
   /** Thông tin user */
-  user: User;
+  user: User
 }

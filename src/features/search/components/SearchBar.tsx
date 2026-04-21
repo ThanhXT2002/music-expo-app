@@ -4,14 +4,15 @@
  * @module features/search
  */
 
-import { View, TextInput, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Pressable, TextInput } from 'react-native'
+
+import { Ionicons } from '@expo/vector-icons'
 
 interface SearchBarProps {
   /** Giá trị hiện tại */
-  value: string;
+  value: string
   /** Hàm cập nhật giá trị */
-  onChangeText: (text: string) => void;
+  onChangeText: (text: string) => void
 }
 
 /**
@@ -19,25 +20,25 @@ interface SearchBarProps {
  */
 export function SearchBar({ value, onChangeText }: SearchBarProps) {
   return (
-    <View className="mx-4 mt-2 flex-row items-center gap-2 rounded-xl bg-[#1E1E2E] px-4 py-3">
-      <Ionicons name="search" size={20} color="#6B6B6B" />
+    <View className='mx-4 mt-2 flex-row items-center gap-2 rounded-xl bg-[#1E1E2E] px-4 py-3'>
+      <Ionicons name='search' size={20} color='#6B6B6B' />
 
       <TextInput
         value={value}
         onChangeText={onChangeText}
-        placeholder="Bài hát, nghệ sĩ, album..."
-        placeholderTextColor="#6B6B6B"
-        className="flex-1 text-sm text-[#EAEAEA]"
-        autoCapitalize="none"
+        placeholder='Bài hát, nghệ sĩ, album...'
+        placeholderTextColor='#6B6B6B'
+        className='flex-1 text-sm text-[#EAEAEA]'
+        autoCapitalize='none'
         autoCorrect={false}
-        returnKeyType="search"
+        returnKeyType='search'
       />
 
       {value.length > 0 && (
         <Pressable onPress={() => onChangeText('')}>
-          <Ionicons name="close-circle" size={20} color="#6B6B6B" />
+          <Ionicons name='close-circle' size={20} color='#6B6B6B' />
         </Pressable>
       )}
     </View>
-  );
+  )
 }

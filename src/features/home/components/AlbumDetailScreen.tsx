@@ -4,27 +4,28 @@
  * @module features/home
  */
 
-import { View, Text, ScrollView, Pressable, StyleSheet, Dimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, Play, Shuffle, Heart, MoreHorizontal } from 'lucide-react-native';
-import { COLORS } from '@shared/constants/colors';
-import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing';
-import { PlayButton } from '@shared/components/PlayButton';
-import { TrackListItem } from '@shared/components/TrackListItem';
+import { View, ScrollView, Pressable, StyleSheet, Dimensions, Text } from 'react-native'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COVER_SIZE = SCREEN_WIDTH * 0.55;
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { Image } from 'expo-image'
+import { LinearGradient } from 'expo-linear-gradient'
+import { ArrowLeft, Play, Shuffle, Heart, MoreHorizontal } from 'lucide-react-native'
+import { COLORS } from '@shared/constants/colors'
+import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing'
+import { PlayButton } from '@shared/components/PlayButton'
+import { TrackListItem } from '@shared/components/TrackListItem'
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const COVER_SIZE = SCREEN_WIDTH * 0.55
 
 interface AlbumDetailScreenProps {
-  albumId: string;
+  albumId: string
 }
 
 export default function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const insets = useSafeAreaInsets()
+  const router = useRouter()
 
   // Mock data
   const album = {
@@ -35,8 +36,8 @@ export default function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
     year: 2020,
     coverUrl: 'https://picsum.photos/seed/album1/400/400',
     trackCount: 8,
-    totalDuration: '32 phút',
-  };
+    totalDuration: '32 phút'
+  }
 
   const tracks = Array.from({ length: 8 }, (_, i) => ({
     id: `at${i + 1}`,
@@ -44,15 +45,15 @@ export default function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
     artist: album.artist,
     artistId: album.artistId,
     coverUrl: album.coverUrl,
-    durationSeconds: 180 + Math.floor(Math.random() * 120),
-  }));
+    durationSeconds: 180 + Math.floor(Math.random() * 120)
+  }))
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.heroSection}>
-          <Image source={{ uri: album.coverUrl }} style={styles.heroBg} contentFit="cover" blurRadius={50} />
+          <Image source={{ uri: album.coverUrl }} style={styles.heroBg} contentFit='cover' blurRadius={50} />
           <LinearGradient
             colors={['rgba(8,3,22,0.2)', 'rgba(8,3,22,0.75)', COLORS.background]}
             style={styles.heroGradient}
@@ -63,11 +64,11 @@ export default function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
             style={[styles.backBtn, { top: insets.top + SPACING.sm }]}
             hitSlop={12}
           >
-            <ArrowLeft size={24} color="#FFFFFF" />
+            <ArrowLeft size={24} color='#FFFFFF' />
           </Pressable>
 
           <View style={[styles.coverWrap, { marginTop: insets.top + 56 }]}>
-            <Image source={{ uri: album.coverUrl }} style={styles.coverImage} contentFit="cover" transition={300} />
+            <Image source={{ uri: album.coverUrl }} style={styles.coverImage} contentFit='cover' transition={300} />
           </View>
         </View>
 
@@ -96,7 +97,7 @@ export default function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
             <Pressable style={styles.shuffleBtn}>
               <Shuffle size={18} color={COLORS.textPrimary} />
             </Pressable>
-            <PlayButton size="lg" onPress={() => {}} />
+            <PlayButton size='lg' onPress={() => {}} />
           </View>
         </View>
 
@@ -117,24 +118,24 @@ export default function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.background
   },
   heroSection: {
     height: COVER_SIZE + 140,
-    position: 'relative',
+    position: 'relative'
   },
   heroBg: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.5,
+    opacity: 0.5
   },
   heroGradient: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFillObject
   },
   backBtn: {
     position: 'absolute',
@@ -145,54 +146,54 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   coverWrap: {
     alignItems: 'center',
-    ...SHADOWS.ambient,
+    ...SHADOWS.ambient
   },
   coverImage: {
     width: COVER_SIZE,
     height: COVER_SIZE,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.lg
   },
   infoSection: {
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    marginTop: SPACING['2xl'],
+    marginTop: SPACING['2xl']
   },
   albumTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: '800',
     color: COLORS.textPrimary,
-    textAlign: 'center',
+    textAlign: 'center'
   },
   albumArtist: {
     fontSize: FONT_SIZE.lg,
     fontWeight: '600',
     color: COLORS.primary,
-    marginTop: SPACING.xs,
+    marginTop: SPACING.xs
   },
   albumMeta: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.textMuted,
-    marginTop: SPACING.xs,
+    marginTop: SPACING.xs
   },
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    marginTop: SPACING['2xl'],
+    marginTop: SPACING['2xl']
   },
   controlsLeft: {
     flexDirection: 'row',
-    gap: SPACING.md,
+    gap: SPACING.md
   },
   controlsRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.lg,
+    gap: SPACING.lg
   },
   iconBtn: {
     width: 44,
@@ -202,7 +203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.border
   },
   shuffleBtn: {
     width: 44,
@@ -212,9 +213,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: COLORS.border
   },
   trackList: {
-    marginTop: SPACING['2xl'],
-  },
-});
+    marginTop: SPACING['2xl']
+  }
+})

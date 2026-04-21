@@ -4,10 +4,10 @@
  * @module features/library/services
  */
 
-import { apiClient } from '@core/api/apiClient';
-import { createLogger } from '@core/logger';
+import { apiClient } from '@core/api/apiClient'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('library-service');
+const logger = createLogger('library-service')
 
 /**
  * Thêm bài hát vào danh sách yêu thích.
@@ -15,8 +15,8 @@ const logger = createLogger('library-service');
  * @param trackId - ID bài hát
  */
 export async function likeTrack(trackId: string): Promise<void> {
-  logger.info('Thích bài hát', { trackId });
-  await apiClient.post(`/library/tracks/${trackId}/like`);
+  logger.info('Thích bài hát', { trackId })
+  await apiClient.post(`/library/tracks/${trackId}/like`)
 }
 
 /**
@@ -25,6 +25,6 @@ export async function likeTrack(trackId: string): Promise<void> {
  * @param trackId - ID bài hát
  */
 export async function unlikeTrack(trackId: string): Promise<void> {
-  logger.info('Bỏ thích bài hát', { trackId });
-  await apiClient.delete(`/library/tracks/${trackId}/like`);
+  logger.info('Bỏ thích bài hát', { trackId })
+  await apiClient.delete(`/library/tracks/${trackId}/like`)
 }

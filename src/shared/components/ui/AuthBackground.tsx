@@ -6,20 +6,20 @@
  * @module shared/components/ui
  */
 
-import { View, StyleSheet, Dimensions } from 'react-native';
-import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
+import { View, StyleSheet, Dimensions } from 'react-native'
+import Svg, { Defs, RadialGradient, Stop, Rect } from 'react-native-svg'
 
-const { width: W, height: H } = Dimensions.get('window');
+const { width: W, height: H } = Dimensions.get('window')
 
 // ─── Grid Pattern ─────────────────────────────────────────────────────────────
 
 /** Grid nền với các đường kẻ mỏng mờ giống bg-grid trên web */
 function GridLines() {
-  const S = 20;
-  const cols = Math.ceil(W / S);
-  const rows = Math.ceil(H / S);
+  const S = 20
+  const cols = Math.ceil(W / S)
+  const rows = Math.ceil(H / S)
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    <View style={StyleSheet.absoluteFill} pointerEvents='none'>
       {Array.from({ length: rows + 1 }).map((_, i) => (
         <View
           key={`h${i}`}
@@ -29,7 +29,7 @@ function GridLines() {
             left: 0,
             right: 0,
             height: 1,
-            backgroundColor: 'rgba(255,255,255,0.10)',
+            backgroundColor: 'rgba(255,255,255,0.10)'
           }}
         />
       ))}
@@ -42,27 +42,27 @@ function GridLines() {
             top: 0,
             bottom: 0,
             width: 1,
-            backgroundColor: 'rgba(255,255,255,0.10)',
+            backgroundColor: 'rgba(255,255,255,0.10)'
           }}
         />
       ))}
     </View>
-  );
+  )
 }
 
 // ─── Neon Blob (SVG RadialGradient — mô phỏng CSS blur(60px)) ────────────────
 
 interface BlobProps {
   /** Tâm X (tỉ lệ 0-1 so với màn hình) */
-  cx: number;
+  cx: number
   /** Tâm Y (tỉ lệ 0-1 so với màn hình) */
-  cy: number;
+  cy: number
   /** Bán kính blob (px) */
-  radius: number;
+  radius: number
   /** Màu neon (#ff00ff, #00ffff, #8b5cf6) */
-  color: string;
+  color: string
   /** Opacity tại tâm (mặc định 0.4 — giống web) */
-  opacity?: number;
+  opacity?: number
 }
 
 /**
@@ -73,9 +73,9 @@ interface BlobProps {
  * → Effect mờ dần từ trong ra ngoài tự nhiên.
  */
 function NeonBlob({ cx, cy, radius, color, opacity = 0.4 }: BlobProps) {
-  const x = cx * W - radius;
-  const y = cy * H - radius;
-  const size = radius * 2;
+  const x = cx * W - radius
+  const y = cy * H - radius
+  const size = radius * 2
 
   return (
     <View
@@ -84,36 +84,30 @@ function NeonBlob({ cx, cy, radius, color, opacity = 0.4 }: BlobProps) {
         left: x,
         top: y,
         width: size,
-        height: size,
+        height: size
       }}
-      pointerEvents="none"
+      pointerEvents='none'
     >
       <Svg width={size} height={size}>
         <Defs>
-          <RadialGradient id={`blob-${cx}-${cy}`} cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={color} stopOpacity={opacity} />
-            <Stop offset="40%" stopColor={color} stopOpacity={opacity * 0.7} />
-            <Stop offset="70%" stopColor={color} stopOpacity={opacity * 0.3} />
-            <Stop offset="100%" stopColor={color} stopOpacity={0} />
+          <RadialGradient id={`blob-${cx}-${cy}`} cx='50%' cy='50%' r='50%'>
+            <Stop offset='0%' stopColor={color} stopOpacity={opacity} />
+            <Stop offset='40%' stopColor={color} stopOpacity={opacity * 0.7} />
+            <Stop offset='70%' stopColor={color} stopOpacity={opacity * 0.3} />
+            <Stop offset='100%' stopColor={color} stopOpacity={0} />
           </RadialGradient>
         </Defs>
-        <Rect
-          x={0}
-          y={0}
-          width={size}
-          height={size}
-          fill={`url(#blob-${cx}-${cy})`}
-        />
+        <Rect x={0} y={0} width={size} height={size} fill={`url(#blob-${cx}-${cy})`} />
       </Svg>
     </View>
-  );
+  )
 }
 
 // ─── Auth Background Component ────────────────────────────────────────────────
 
 interface AuthBackgroundProps {
   /** Variant chọn vị trí blob khác nhau cho mỗi screen */
-  variant?: 'login' | 'register' | 'forgot' | 'verify';
+  variant?: 'login' | 'register' | 'forgot' | 'verify'
 }
 
 /**
@@ -124,7 +118,7 @@ interface AuthBackgroundProps {
  * <AuthBackground variant="login" />
  */
 export function AuthBackground({ variant = 'login' }: AuthBackgroundProps) {
-  const blobs = BLOB_CONFIGS[variant];
+  const blobs = BLOB_CONFIGS[variant]
 
   return (
     <>
@@ -137,7 +131,7 @@ export function AuthBackground({ variant = 'login' }: AuthBackgroundProps) {
         <NeonBlob key={i} {...b} />
       ))}
     </>
-  );
+  )
 }
 
 // ─── Blob Configurations — mỗi screen có bố cục blob khác nhau ───────────────
@@ -149,7 +143,7 @@ const BLOB_CONFIGS: Record<string, BlobProps[]> = {
     // Cyan — bottom-right (giống web: .blob bg-[#00ffff])
     { cx: 1.0, cy: 1.0, radius: 220, color: '#00ffff', opacity: 0.3 },
     // Purple — center-left (giống web: .blob bg-[#8b5cf6])
-    { cx: 0.25, cy: 0.65, radius: 200, color: '#8b5cf6', opacity: 0.3 },
+    { cx: 0.25, cy: 0.65, radius: 200, color: '#8b5cf6', opacity: 0.3 }
   ],
   register: [
     // Cyan — top-right
@@ -157,7 +151,7 @@ const BLOB_CONFIGS: Record<string, BlobProps[]> = {
     // Magenta — left-center
     { cx: 0.0, cy: 0.55, radius: 200, color: '#ff00ff', opacity: 0.3 },
     // Purple — bottom-center
-    { cx: 0.6, cy: 1.0, radius: 180, color: '#8b5cf6', opacity: 0.28 },
+    { cx: 0.6, cy: 1.0, radius: 180, color: '#8b5cf6', opacity: 0.28 }
   ],
   forgot: [
     // Magenta — top-left
@@ -165,7 +159,7 @@ const BLOB_CONFIGS: Record<string, BlobProps[]> = {
     // Cyan — bottom-right
     { cx: 1.0, cy: 0.85, radius: 180, color: '#00ffff', opacity: 0.28 },
     // Purple — center-right
-    { cx: 0.9, cy: 0.4, radius: 170, color: '#8b5cf6', opacity: 0.25 },
+    { cx: 0.9, cy: 0.4, radius: 170, color: '#8b5cf6', opacity: 0.25 }
   ],
   verify: [
     // Purple — center
@@ -173,15 +167,15 @@ const BLOB_CONFIGS: Record<string, BlobProps[]> = {
     // Cyan — bottom-right
     { cx: 1.0, cy: 0.9, radius: 170, color: '#00ffff', opacity: 0.25 },
     // Magenta — top-right
-    { cx: 0.9, cy: 0.0, radius: 160, color: '#ff00ff', opacity: 0.28 },
-  ],
-};
+    { cx: 0.9, cy: 0.0, radius: 160, color: '#ff00ff', opacity: 0.28 }
+  ]
+}
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   bg: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#080316',
-  },
-});
+    backgroundColor: '#080316'
+  }
+})

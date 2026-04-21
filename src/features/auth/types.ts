@@ -9,9 +9,9 @@
  */
 export interface LoginFormData {
   /** Email */
-  email: string;
+  email: string
   /** Mật khẩu */
-  password: string;
+  password: string
 }
 
 /**
@@ -19,11 +19,11 @@ export interface LoginFormData {
  */
 export interface RegisterFormData {
   /** Tên hiển thị */
-  displayName: string;
+  displayName: string
   /** Email */
-  email: string;
+  email: string
   /** Mật khẩu */
-  password: string;
+  password: string
   /** Xác nhận mật khẩu */
-  confirmPassword: string;
+  confirmPassword: string
 }

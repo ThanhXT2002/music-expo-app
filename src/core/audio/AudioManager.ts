@@ -9,32 +9,32 @@
  * @module core/audio
  */
 
-import { Audio, AVPlaybackStatus } from 'expo-av';
-import { createLogger } from '@core/logger';
-import type { AudioTrack, PlaybackProgress, PlaybackState } from './types';
+import { Audio, AVPlaybackStatus } from 'expo-av'
+import { createLogger } from '@core/logger'
+import type { AudioTrack, PlaybackProgress, PlaybackState } from './types'
 
-const logger = createLogger('audio-manager');
+const logger = createLogger('audio-manager')
 
 /** Sound object hiện tại đang phát */
-let currentSound: Audio.Sound | null = null;
+let currentSound: Audio.Sound | null = null
 
 /** Track đang phát */
-let currentTrack: AudioTrack | null = null;
+let currentTrack: AudioTrack | null = null
 
 /** Trạng thái phát nhạc */
-let playbackState: PlaybackState = 'idle';
+let playbackState: PlaybackState = 'idle'
 
 /** Progress gần nhất — dùng khi notifyListeners */
 let lastProgress: PlaybackProgress = {
   currentTime: 0,
   duration: 0,
   progress: 0,
-  buffered: 0,
-};
+  buffered: 0
+}
 
 /** Callback khi trạng thái phát thay đổi */
-type PlaybackCallback = (state: PlaybackState, progress: PlaybackProgress) => void;
-const listeners: Set<PlaybackCallback> = new Set();
+type PlaybackCallback = (state: PlaybackState, progress: PlaybackProgress) => void
+const listeners: Set<PlaybackCallback> = new Set()
 
 /**
  * Khởi tạo audio mode cho ứng dụng.
@@ -43,18 +43,18 @@ const listeners: Set<PlaybackCallback> = new Set();
  * @throws {Error} Nếu thiết bị không hỗ trợ audio playback
  */
 export async function setupAudioManager(): Promise<void> {
-  logger.info('Khởi tạo AudioManager');
+  logger.info('Khởi tạo AudioManager')
   try {
     await Audio.setAudioModeAsync({
       // Cho phép phát nhạc khi màn hình khoá
       staysActiveInBackground: true,
       // Cho phép phát khi đang ở chế độ im lặng (iOS)
-      playsInSilentModeIOS: true,
-    });
-    logger.info('AudioManager khởi tạo thành công');
+      playsInSilentModeIOS: true
+    })
+    logger.info('AudioManager khởi tạo thành công')
   } catch (error) {
-    logger.error('AudioManager khởi tạo thất bại', error);
-    throw error;
+    logger.error('AudioManager khởi tạo thất bại', error)
+    throw error
   }
 }
 
@@ -65,43 +65,43 @@ export async function setupAudioManager(): Promise<void> {
  * @param track - Thông tin bài hát cần phát
  */
 export async function loadAndPlay(track: AudioTrack): Promise<void> {
-  logger.info('Load bài hát mới', { trackId: track.id, title: track.title });
+  logger.info('Load bài hát mới', { trackId: track.id, title: track.title })
 
   try {
     // Giải phóng sound cũ nếu đang phát bài khác
     if (currentSound) {
-      logger.debug('Giải phóng sound cũ trước khi load bài mới');
-      await currentSound.unloadAsync();
-      currentSound = null;
+      logger.debug('Giải phóng sound cũ trước khi load bài mới')
+      await currentSound.unloadAsync()
+      currentSound = null
     }
 
     // Reset progress cho bài mới
-    lastProgress = { currentTime: 0, duration: 0, progress: 0, buffered: 0 };
+    lastProgress = { currentTime: 0, duration: 0, progress: 0, buffered: 0 }
 
-    playbackState = 'loading';
-    notifyListeners();
+    playbackState = 'loading'
+    notifyListeners()
 
     const { sound } = await Audio.Sound.createAsync(
       { uri: track.streamUrl },
       {
         shouldPlay: true,
         // Cấu hình cập nhật tiến trình mỗi 250ms thay vì mặc định 500ms
-        progressUpdateIntervalMillis: 250,
+        progressUpdateIntervalMillis: 250
       },
-      onPlaybackStatusUpdate,
-    );
+      onPlaybackStatusUpdate
+    )
 
-    currentSound = sound;
-    currentTrack = track;
-    playbackState = 'playing';
-    notifyListeners();
+    currentSound = sound
+    currentTrack = track
+    playbackState = 'playing'
+    notifyListeners()
 
-    logger.info('Phát bài hát thành công', { trackId: track.id });
+    logger.info('Phát bài hát thành công', { trackId: track.id })
   } catch (error) {
-    playbackState = 'error';
-    notifyListeners();
-    logger.error('Không thể load hoặc phát bài hát', { trackId: track.id, error });
-    throw error;
+    playbackState = 'error'
+    notifyListeners()
+    logger.error('Không thể load hoặc phát bài hát', { trackId: track.id, error })
+    throw error
   }
 }
 
@@ -110,13 +110,13 @@ export async function loadAndPlay(track: AudioTrack): Promise<void> {
  */
 export async function play(): Promise<void> {
   if (!currentSound) {
-    logger.warn('Gọi play() nhưng không có sound nào được load');
-    return;
+    logger.warn('Gọi play() nhưng không có sound nào được load')
+    return
   }
-  logger.debug('Phát tiếp nhạc');
-  await currentSound.playAsync();
-  playbackState = 'playing';
-  notifyListeners();
+  logger.debug('Phát tiếp nhạc')
+  await currentSound.playAsync()
+  playbackState = 'playing'
+  notifyListeners()
 }
 
 /**
@@ -124,13 +124,13 @@ export async function play(): Promise<void> {
  */
 export async function pause(): Promise<void> {
   if (!currentSound) {
-    logger.warn('Gọi pause() nhưng không có sound nào được load');
-    return;
+    logger.warn('Gọi pause() nhưng không có sound nào được load')
+    return
   }
-  logger.debug('Tạm dừng nhạc');
-  await currentSound.pauseAsync();
-  playbackState = 'paused';
-  notifyListeners();
+  logger.debug('Tạm dừng nhạc')
+  await currentSound.pauseAsync()
+  playbackState = 'paused'
+  notifyListeners()
 }
 
 /**
@@ -139,9 +139,9 @@ export async function pause(): Promise<void> {
  * @param positionSeconds - Vị trí cần tua tới (giây)
  */
 export async function seekTo(positionSeconds: number): Promise<void> {
-  if (!currentSound) return;
-  logger.debug('Tua tới vị trí', { positionSeconds });
-  await currentSound.setPositionAsync(positionSeconds * 1000);
+  if (!currentSound) return
+  logger.debug('Tua tới vị trí', { positionSeconds })
+  await currentSound.setPositionAsync(positionSeconds * 1000)
 }
 
 /**
@@ -151,10 +151,10 @@ export async function seekTo(positionSeconds: number): Promise<void> {
  * @returns Hàm unsubscribe để huỷ đăng ký
  */
 export function subscribe(callback: PlaybackCallback): () => void {
-  listeners.add(callback);
+  listeners.add(callback)
   // Gửi state hiện tại ngay cho subscriber mới (giải quyết race condition)
-  callback(playbackState, lastProgress);
-  return () => listeners.delete(callback);
+  callback(playbackState, lastProgress)
+  return () => listeners.delete(callback)
 }
 
 /**
@@ -163,7 +163,7 @@ export function subscribe(callback: PlaybackCallback): () => void {
  * @returns Track hiện tại hoặc null
  */
 export function getCurrentTrack(): AudioTrack | null {
-  return currentTrack;
+  return currentTrack
 }
 
 /**
@@ -172,7 +172,7 @@ export function getCurrentTrack(): AudioTrack | null {
  * @returns Trạng thái playback
  */
 export function getPlaybackState(): PlaybackState {
-  return playbackState;
+  return playbackState
 }
 
 // --- Internal helpers ---
@@ -182,28 +182,26 @@ export function getPlaybackState(): PlaybackState {
  * Tự động phát hiện khi bài hát kết thúc.
  */
 function onPlaybackStatusUpdate(status: AVPlaybackStatus): void {
-  if (!status.isLoaded) return;
+  if (!status.isLoaded) return
 
   if (status.didJustFinish) {
-    logger.info('Bài hát đã phát xong', { trackId: currentTrack?.id });
-    playbackState = 'stopped';
-    notifyListeners();
-    return;
+    logger.info('Bài hát đã phát xong', { trackId: currentTrack?.id })
+    playbackState = 'stopped'
+    notifyListeners()
+    return
   }
 
   const progress: PlaybackProgress = {
     currentTime: (status.positionMillis ?? 0) / 1000,
     duration: (status.durationMillis ?? 0) / 1000,
     progress: status.durationMillis ? status.positionMillis / status.durationMillis : 0,
-    buffered: status.playableDurationMillis
-      ? status.playableDurationMillis / (status.durationMillis ?? 1)
-      : 0,
-  };
+    buffered: status.playableDurationMillis ? status.playableDurationMillis / (status.durationMillis ?? 1) : 0
+  }
 
   // Lưu lại progress gần nhất
-  lastProgress = progress;
+  lastProgress = progress
 
-  listeners.forEach((cb) => cb(playbackState, progress));
+  listeners.forEach((cb) => cb(playbackState, progress))
 }
 
 /**
@@ -211,5 +209,5 @@ function onPlaybackStatusUpdate(status: AVPlaybackStatus): void {
  * Dùng lastProgress thay vì zeros.
  */
 function notifyListeners(): void {
-  listeners.forEach((cb) => cb(playbackState, lastProgress));
+  listeners.forEach((cb) => cb(playbackState, lastProgress))
 }

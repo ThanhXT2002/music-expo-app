@@ -5,11 +5,11 @@
  * @module features/player/services
  */
 
-import { apiClient } from '@core/api/apiClient';
-import { API_ENDPOINTS } from '@core/api/endpoints';
-import { createLogger } from '@core/logger';
+import { apiClient } from '@core/api/apiClient'
+import { API_ENDPOINTS } from '@core/api/endpoints'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('player-service');
+const logger = createLogger('player-service')
 
 /**
  * Lấy URL stream của bài hát từ server.
@@ -20,14 +20,14 @@ const logger = createLogger('player-service');
  * @throws {Error} Khi server trả về lỗi hoặc mất kết nối
  */
 export async function getStreamUrl(trackId: string): Promise<string> {
-  logger.info('Lấy stream URL', { trackId });
+  logger.info('Lấy stream URL', { trackId })
   try {
-    const response = await apiClient.get<{ url: string }>(API_ENDPOINTS.SONG_PROXY_DOWNLOAD(trackId));
-    logger.info('Lấy stream URL thành công', { trackId });
-    return response.data.url;
+    const response = await apiClient.get<{ url: string }>(API_ENDPOINTS.SONG_PROXY_DOWNLOAD(trackId))
+    logger.info('Lấy stream URL thành công', { trackId })
+    return response.data.url
   } catch (error) {
-    logger.error('Không thể lấy stream URL', { trackId, error });
-    throw error;
+    logger.error('Không thể lấy stream URL', { trackId, error })
+    throw error
   }
 }
 
@@ -39,12 +39,12 @@ export async function getStreamUrl(trackId: string): Promise<string> {
  * @param listenedSeconds - Số giây đã nghe thực tế
  */
 export async function reportPlay(trackId: string, listenedSeconds: number): Promise<void> {
-  logger.debug('Báo cáo lượt nghe', { trackId, listenedSeconds });
+  logger.debug('Báo cáo lượt nghe', { trackId, listenedSeconds })
   try {
-    await apiClient.post(API_ENDPOINTS.SONGS_COMPLETED, { trackId, listenedSeconds });
+    await apiClient.post(API_ENDPOINTS.SONGS_COMPLETED, { trackId, listenedSeconds })
   } catch (error) {
     // Không throw — không để lỗi thống kê ảnh hưởng tính năng nghe nhạc
-    logger.warn('Báo cáo lượt nghe thất bại — bỏ qua', { trackId, error });
+    logger.warn('Báo cáo lượt nghe thất bại — bỏ qua', { trackId, error })
   }
 }
 
@@ -55,14 +55,12 @@ export async function reportPlay(trackId: string, listenedSeconds: number): Prom
  * @returns Nội dung lyrics hoặc null nếu không có
  */
 export async function getLyrics(trackId: string): Promise<string | null> {
-  logger.debug('Lấy lyrics', { trackId });
+  logger.debug('Lấy lyrics', { trackId })
   try {
-    const response = await apiClient.get<{ lyrics: string | null }>(
-      API_ENDPOINTS.YTM_SONG_LYRICS(trackId),
-    );
-    return response.data.lyrics;
+    const response = await apiClient.get<{ lyrics: string | null }>(API_ENDPOINTS.YTM_SONG_LYRICS(trackId))
+    return response.data.lyrics
   } catch (error) {
-    logger.warn('Không thể lấy lyrics — bỏ qua', { trackId, error });
-    return null;
+    logger.warn('Không thể lấy lyrics — bỏ qua', { trackId, error })
+    return null
   }
 }

@@ -14,15 +14,15 @@
  *
  * @module core/data
  */
-import * as SQLite from 'expo-sqlite';
-import { createLogger } from '@core/logger';
+import * as SQLite from 'expo-sqlite'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('database');
+const logger = createLogger('database')
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 /** Tên file database duy nhất */
-const DB_NAME = 'musicPlayer.db';
+const DB_NAME = 'musicPlayer.db'
 
 // ─── Migrations ──────────────────────────────────────────────────────────────
 
@@ -79,13 +79,13 @@ const MIGRATIONS: string[] = [
     songId TEXT NOT NULL,
     addedAt TEXT DEFAULT (datetime('now')),
     PRIMARY KEY (playlistId, songId)
-  )`,
-];
+  )`
+]
 
 // ─── Singleton Connection ────────────────────────────────────────────────────
 
 /** Promise duy nhất giữ kết nối database đã khởi tạo */
-let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null
 
 /**
  * Lấy database instance (singleton).
@@ -98,29 +98,29 @@ export async function getDb(): Promise<SQLite.SQLiteDatabase> {
   if (!dbPromise) {
     dbPromise = (async () => {
       try {
-        const db = await SQLite.openDatabaseAsync(DB_NAME);
+        const db = await SQLite.openDatabaseAsync(DB_NAME)
 
         // Bật WAL mode cho performance tốt hơn
-        await db.execAsync('PRAGMA journal_mode = WAL');
+        await db.execAsync('PRAGMA journal_mode = WAL')
 
         // Chạy từng migration tuần tự
         for (const sql of MIGRATIONS) {
-          await db.execAsync(sql);
+          await db.execAsync(sql)
         }
 
         logger.info('Database khởi tạo thành công', {
-          tables: MIGRATIONS.length,
-        });
-        return db;
+          tables: MIGRATIONS.length
+        })
+        return db
       } catch (error) {
         // Reset để lần gọi sau thử lại
-        dbPromise = null;
-        logger.error('Database khởi tạo thất bại', error);
-        throw error;
+        dbPromise = null
+        logger.error('Database khởi tạo thất bại', error)
+        throw error
       }
-    })();
+    })()
   }
-  return dbPromise;
+  return dbPromise
 }
 
 /**
@@ -128,147 +128,140 @@ export async function getDb(): Promise<SQLite.SQLiteDatabase> {
  * An toàn gọi nhiều lần (singleton).
  */
 export async function initDb(): Promise<void> {
-  await getDb();
+  await getDb()
 }
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 /** Bài hát offline đã tải về thiết bị */
 export interface LocalSong {
-  id: string;
-  title: string;
-  artist: string;
-  thumbnailUrl: string;
-  localAudioUri: string;
-  duration: number;
+  id: string
+  title: string
+  artist: string
+  thumbnailUrl: string
+  localAudioUri: string
+  duration: number
 }
 
 /** Mục lịch sử tìm kiếm */
 export interface SearchHistoryItem {
-  id: number;
-  query: string;
-  type: 'keyword' | 'url';
-  createdAt: string;
+  id: number
+  query: string
+  type: 'keyword' | 'url'
+  createdAt: string
 }
 
 /** Mục lịch sử nghe nhạc */
 export interface PlayHistoryItem {
-  id: number;
-  trackId: string;
-  title: string;
-  artist: string;
-  thumbnailUrl: string;
-  playedAt: string;
+  id: number
+  trackId: string
+  title: string
+  artist: string
+  thumbnailUrl: string
+  playedAt: string
 }
 
 // ─── Repository: Offline Songs ───────────────────────────────────────────────
 
 /** Lưu / cập nhật bài hát offline (Thực thể lõi song + MP3) */
 export async function saveOfflineSong(song: LocalSong): Promise<void> {
-  const db = await getDb();
+  const db = await getDb()
   await db.runAsync(
     `INSERT OR REPLACE INTO offline_songs (id, title, artist, thumbnailUrl, localAudioUri, duration)
      VALUES (?, ?, ?, ?, ?, ?)`,
-    [song.id, song.title, song.artist, song.thumbnailUrl, song.localAudioUri, song.duration],
-  );
+    [song.id, song.title, song.artist, song.thumbnailUrl, song.localAudioUri, song.duration]
+  )
 }
 
 /** Lấy toàn bộ bài hát offline (Master Library list) */
 export async function getOfflineSongs(): Promise<LocalSong[]> {
-  const db = await getDb();
-  return db.getAllAsync<LocalSong>('SELECT * FROM offline_songs ORDER BY rowid DESC');
+  const db = await getDb()
+  return db.getAllAsync<LocalSong>('SELECT * FROM offline_songs ORDER BY rowid DESC')
 }
 
 /** Xoá bài hát offline theo ID (Xoá thật / Hard Delete) */
 export async function deleteOfflineSong(id: string): Promise<void> {
-  const db = await getDb();
-  await db.runAsync('DELETE FROM offline_songs WHERE id = ?', [id]);
+  const db = await getDb()
+  await db.runAsync('DELETE FROM offline_songs WHERE id = ?', [id])
 }
 
 // ─── Repository: Downloads History ───────────────────────────────────────────
 
 /** Lưu vào bảng lịch sử downloads */
 export async function saveDownloadHistory(songId: string): Promise<void> {
-  const db = await getDb();
-  await db.runAsync(
-    `INSERT OR IGNORE INTO downloads (id) VALUES (?)`,
-    [songId]
-  );
+  const db = await getDb()
+  await db.runAsync(`INSERT OR IGNORE INTO downloads (id) VALUES (?)`, [songId])
 }
 
-/** 
+/**
  * Lấy các bài hát offline CHỈ CÓ TRONG LỊCH SỬ TẢI VỀ (Downloads tab).
  * Join với bảng offline_songs để lấy info thật.
  */
 export async function getDownloadedSongs(): Promise<LocalSong[]> {
-  const db = await getDb();
+  const db = await getDb()
   return db.getAllAsync<LocalSong>(
     `SELECT o.* FROM offline_songs o 
      INNER JOIN downloads d ON o.id = d.id 
      ORDER BY d.downloadedAt DESC`
-  );
+  )
 }
 
 /** Xoá bài khỏi danh sách tải về (Soft delete - vẫn giữ file gốc trong máy) */
 export async function deleteDownloadHistory(songId: string): Promise<void> {
-  const db = await getDb();
-  await db.runAsync('DELETE FROM downloads WHERE id = ?', [songId]);
+  const db = await getDb()
+  await db.runAsync('DELETE FROM downloads WHERE id = ?', [songId])
 }
 
 /** Đếm số bài hát offline */
 export async function countOfflineSongs(): Promise<number> {
-  const db = await getDb();
-  const result = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM offline_songs');
-  return result?.count ?? 0;
+  const db = await getDb()
+  const result = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM offline_songs')
+  return result?.count ?? 0
 }
 
 // ─── Repository: Search History ──────────────────────────────────────────────
 
 /** Lưu lịch sử tìm kiếm */
 export async function saveSearchHistory(query: string, type: 'keyword' | 'url' = 'keyword'): Promise<void> {
-  const db = await getDb();
+  const db = await getDb()
   // Xoá bản ghi cũ trùng query để đẩy lên đầu
-  await db.runAsync('DELETE FROM search_history WHERE query = ?', [query]);
-  await db.runAsync('INSERT INTO search_history (query, type) VALUES (?, ?)', [query, type]);
+  await db.runAsync('DELETE FROM search_history WHERE query = ?', [query])
+  await db.runAsync('INSERT INTO search_history (query, type) VALUES (?, ?)', [query, type])
 }
 
 /** Lấy lịch sử tìm kiếm gần nhất */
 export async function getSearchHistory(limit: number = 20): Promise<SearchHistoryItem[]> {
-  const db = await getDb();
-  return db.getAllAsync<SearchHistoryItem>(
-    'SELECT * FROM search_history ORDER BY createdAt DESC LIMIT ?',
-    [limit],
-  );
+  const db = await getDb()
+  return db.getAllAsync<SearchHistoryItem>('SELECT * FROM search_history ORDER BY createdAt DESC LIMIT ?', [limit])
 }
 
 /** Xoá toàn bộ lịch sử tìm kiếm */
 export async function clearSearchHistory(): Promise<void> {
-  const db = await getDb();
-  await db.runAsync('DELETE FROM search_history');
+  const db = await getDb()
+  await db.runAsync('DELETE FROM search_history')
 }
 
 // ─── Repository: Play History ────────────────────────────────────────────────
 
 /** Ghi nhận lượt nghe */
 export async function savePlayHistory(track: Omit<PlayHistoryItem, 'id' | 'playedAt'>): Promise<void> {
-  const db = await getDb();
-  await db.runAsync(
-    'INSERT INTO play_history (trackId, title, artist, thumbnailUrl) VALUES (?, ?, ?, ?)',
-    [track.trackId, track.title, track.artist, track.thumbnailUrl],
-  );
+  const db = await getDb()
+  await db.runAsync('INSERT INTO play_history (trackId, title, artist, thumbnailUrl) VALUES (?, ?, ?, ?)', [
+    track.trackId,
+    track.title,
+    track.artist,
+    track.thumbnailUrl
+  ])
 }
 
 /** Lấy lịch sử nghe gần nhất */
 export async function getPlayHistory(limit: number = 50): Promise<PlayHistoryItem[]> {
-  const db = await getDb();
-  return db.getAllAsync<PlayHistoryItem>(
-    'SELECT * FROM play_history ORDER BY playedAt DESC LIMIT ?',
-    [limit],
-  );
+  const db = await getDb()
+  return db.getAllAsync<PlayHistoryItem>('SELECT * FROM play_history ORDER BY playedAt DESC LIMIT ?', [limit])
 }
 
 /** Xoá toàn bộ lịch sử nghe */
 export async function clearPlayHistory(): Promise<void> {
-  const db = await getDb();
-  await db.runAsync('DELETE FROM play_history');
+  const db = await getDb()
+  await db.runAsync('DELETE FROM play_history')
 }

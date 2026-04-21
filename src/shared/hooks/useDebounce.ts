@@ -5,7 +5,7 @@
  * @module shared/hooks
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 /**
  * Hook trì hoãn cập nhật giá trị theo khoảng thời gian chỉ định.
@@ -24,16 +24,16 @@ import { useEffect, useState } from 'react';
  * }, [debouncedSearch]);
  */
 export function useDebounce<T>(value: T, delay = 300): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [debouncedValue, setDebouncedValue] = useState(value)
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+      setDebouncedValue(value)
+    }, delay)
 
     // Huỷ timer cũ mỗi khi value thay đổi trước khi hết delay
-    return () => clearTimeout(timer);
-  }, [value, delay]);
+    return () => clearTimeout(timer)
+  }, [value, delay])
 
-  return debouncedValue;
+  return debouncedValue
 }

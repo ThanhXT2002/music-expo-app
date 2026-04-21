@@ -4,11 +4,11 @@
  * @module features/player/hooks
  */
 
-import { useQuery } from '@tanstack/react-query';
-import { createLogger } from '@core/logger';
-import { getLyrics } from '../services/playerService';
+import { useQuery } from '@tanstack/react-query'
+import { createLogger } from '@core/logger'
+import { getLyrics } from '../services/playerService'
 
-const logger = createLogger('use-lyrics');
+const logger = createLogger('use-lyrics')
 
 /**
  * Hook tải lyrics của bài hát.
@@ -20,12 +20,12 @@ export function useLyrics(trackId?: string) {
   const query = useQuery({
     queryKey: ['lyrics', trackId],
     queryFn: async () => {
-      if (!trackId) return null;
-      logger.info('Tải lyrics', { trackId });
-      return getLyrics(trackId);
+      if (!trackId) return null
+      logger.info('Tải lyrics', { trackId })
+      return getLyrics(trackId)
     },
-    enabled: !!trackId,
-  });
+    enabled: !!trackId
+  })
 
   return {
     /** Nội dung lyrics */
@@ -33,6 +33,6 @@ export function useLyrics(trackId?: string) {
     /** Đang tải lyrics */
     isLoading: query.isLoading,
     /** true nếu bài hát có lyrics */
-    hasLyrics: !!query.data,
-  };
+    hasLyrics: !!query.data
+  }
 }

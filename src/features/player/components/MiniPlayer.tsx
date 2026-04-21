@@ -5,39 +5,37 @@
  * @module features/player
  */
 
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import { BlurView } from 'expo-blur';
-import { Play, Pause, SkipForward } from 'lucide-react-native';
-import { usePlayerStore } from '../store/playerStore';
-import { usePlayer } from '../hooks/usePlayer';
-import { COLORS } from '@shared/constants/colors';
-import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing';
+import { View, Pressable, StyleSheet, Text } from 'react-native'
+
+import { Image } from 'expo-image'
+import { useRouter } from 'expo-router'
+import { BlurView } from 'expo-blur'
+import { Play, Pause, SkipForward } from 'lucide-react-native'
+import { usePlayerStore } from '../store/playerStore'
+import { usePlayer } from '../hooks/usePlayer'
+import { COLORS } from '@shared/constants/colors'
+import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 
 /**
  * MiniPlayer — thanh phát nhạc nhỏ nổi phía trên tab bar.
  * Glass effect background, progress bar mỏng phía trên.
  */
 export function MiniPlayer() {
-  const { currentTrack } = usePlayerStore();
-  const { isPlaying, progress, play, pause } = usePlayer();
-  const router = useRouter();
+  const { currentTrack } = usePlayerStore()
+  const { isPlaying, progress, play, pause } = usePlayer()
+  const router = useRouter()
 
-  if (!currentTrack) return null;
+  if (!currentTrack) return null
 
   const handlePlayPause = async () => {
-    if (isPlaying) await pause();
-    else await play();
-  };
+    if (isPlaying) await pause()
+    else await play()
+  }
 
   return (
-    <Pressable
-      onPress={() => router.push(`/player/${currentTrack.id}`)}
-      style={styles.container}
-    >
+    <Pressable onPress={() => router.push(`/player/${currentTrack.id}`)} style={styles.container}>
       {/* Glass background */}
-      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <BlurView intensity={30} tint='dark' style={StyleSheet.absoluteFillObject} />
       <View style={[StyleSheet.absoluteFillObject, styles.glassOverlay]} />
 
       {/* Progress bar mỏng phía trên */}
@@ -47,12 +45,7 @@ export function MiniPlayer() {
 
       <View style={styles.content}>
         {/* Cover */}
-        <Image
-          source={{ uri: currentTrack.coverUrl }}
-          style={styles.cover}
-          contentFit="cover"
-          transition={200}
-        />
+        <Image source={{ uri: currentTrack.coverUrl }} style={styles.cover} contentFit='cover' transition={200} />
 
         {/* Song info */}
         <View style={styles.info}>
@@ -77,7 +70,7 @@ export function MiniPlayer() {
         </Pressable>
       </View>
     </Pressable>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -95,47 +88,47 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 8
   },
   glassOverlay: {
-    backgroundColor: 'rgba(176, 38, 255, 0.04)',
+    backgroundColor: 'rgba(176, 38, 255, 0.04)'
   },
   progressTrack: {
     height: 2.5,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.06)'
   },
   progressFill: {
     height: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: 2,
+    borderRadius: 2
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SPACING.sm,
     paddingRight: SPACING.md,
-    gap: SPACING.sm,
+    gap: SPACING.sm
   },
   cover: {
     width: 44,
     height: 44,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.sm
   },
   info: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   title: {
     fontSize: FONT_SIZE.md,
     fontWeight: '600',
-    color: COLORS.textPrimary,
+    color: COLORS.textPrimary
   },
   artist: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textMuted,
-    marginTop: 1,
+    marginTop: 1
   },
   controlBtn: {
-    padding: SPACING.sm,
-  },
-});
+    padding: SPACING.sm
+  }
+})

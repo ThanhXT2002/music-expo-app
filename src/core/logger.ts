@@ -5,9 +5,9 @@
  * @module core
  */
 
-const IS_DEV = __DEV__;
+const IS_DEV = __DEV__
 
-type LogLevel = 'info' | 'warn' | 'error' | 'debug';
+type LogLevel = 'info' | 'warn' | 'error' | 'debug'
 
 /**
  * Tạo prefix cho log message — bao gồm icon theo level và tên module viết hoa.
@@ -21,9 +21,9 @@ function buildPrefix(module: string, level: LogLevel): string {
     info: 'ℹ',
     warn: '⚠',
     error: '✖',
-    debug: '◉',
-  };
-  return `[${icons[level]} ${module.toUpperCase()}]`;
+    debug: '◉'
+  }
+  return `[${icons[level]} ${module.toUpperCase()}]`
 }
 
 /**
@@ -44,31 +44,31 @@ export function createLogger(module: string) {
      * Log thông tin thông thường — luồng chạy bình thường.
      */
     info: (message: string, data?: unknown) => {
-      if (!IS_DEV) return;
-      console.log(buildPrefix(module, 'info'), message, data ?? '');
+      if (!IS_DEV) return
+      console.log(buildPrefix(module, 'info'), message, data ?? '')
     },
 
     /**
      * Log cảnh báo — có thể gây vấn đề nhưng chưa crash.
      */
     warn: (message: string, data?: unknown) => {
-      if (!IS_DEV) return;
-      console.warn(buildPrefix(module, 'warn'), message, data ?? '');
+      if (!IS_DEV) return
+      console.warn(buildPrefix(module, 'warn'), message, data ?? '')
     },
 
     /**
      * Log lỗi — luôn hiển thị kể cả production.
      */
     error: (message: string, error?: unknown) => {
-      console.error(buildPrefix(module, 'error'), message, error ?? '');
+      console.error(buildPrefix(module, 'error'), message, error ?? '')
     },
 
     /**
      * Log debug chi tiết — chỉ bật khi cần điều tra.
      */
     debug: (message: string, data?: unknown) => {
-      if (!IS_DEV) return;
-      console.debug(buildPrefix(module, 'debug'), message, data ?? '');
-    },
-  };
+      if (!IS_DEV) return
+      console.debug(buildPrefix(module, 'debug'), message, data ?? '')
+    }
+  }
 }

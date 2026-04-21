@@ -5,17 +5,17 @@
  * @module shared/hooks
  */
 
-import { useColorScheme } from 'react-native';
-import { COLORS } from '@shared/constants/colors';
+import { useColorScheme } from 'react-native'
+import { COLORS } from '@shared/constants/colors'
 
 /**
  * Giá trị trả về của hook useTheme.
  */
 interface UseThemeReturn {
   /** true nếu đang ở Dark Mode */
-  isDark: boolean;
+  isDark: boolean
   /** Bảng màu phù hợp với theme hiện tại */
-  colors: typeof COLORS;
+  colors: typeof COLORS
 }
 
 /**
@@ -29,11 +29,11 @@ interface UseThemeReturn {
  * <View style={{ backgroundColor: colors.background }}>
  */
 export function useTheme(): UseThemeReturn {
-  const colorScheme = useColorScheme();
+  const colorScheme = useColorScheme()
 
   // NOTE: Hiện tại chỉ hỗ trợ Dark Mode — sẽ thêm Light Mode palette sau
   return {
     isDark: colorScheme === 'dark' || true,
-    colors: COLORS,
-  };
+    colors: COLORS
+  }
 }

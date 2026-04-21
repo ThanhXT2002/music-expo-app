@@ -9,9 +9,9 @@
  */
 export interface PlaylistFormData {
   /** Tên playlist */
-  title: string;
+  title: string
   /** Mô tả */
-  description: string;
+  description: string
   /** Công khai hay riêng tư */
-  isPublic: boolean;
+  isPublic: boolean
 }

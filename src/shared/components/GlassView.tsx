@@ -7,25 +7,22 @@
  * @module shared/components
  */
 
-import React from 'react';
-import { View, StyleSheet, Platform, type ViewStyle, type StyleProp } from 'react-native';
-import { BlurView } from 'expo-blur';
-import {
-  LiquidGlassView,
-  isLiquidGlassSupported,
-} from '@callstack/liquid-glass';
-import { COLORS } from '@shared/constants/colors';
-import { RADIUS } from '@shared/constants/spacing';
+import React from 'react'
+import { View, StyleSheet, Platform, type ViewStyle, type StyleProp } from 'react-native'
+import { BlurView } from 'expo-blur'
+import { LiquidGlassView, isLiquidGlassSupported } from '@callstack/liquid-glass'
+import { COLORS } from '@shared/constants/colors'
+import { RADIUS } from '@shared/constants/spacing'
 
 interface GlassViewProps {
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
+  children: React.ReactNode
+  style?: StyleProp<ViewStyle>
   /** Cường độ blur (chỉ áp dụng cho fallback) */
-  intensity?: number;
+  intensity?: number
   /** BorderRadius */
-  borderRadius?: number;
+  borderRadius?: number
   /** Hiển thị viền sáng hay không */
-  showBorder?: boolean;
+  showBorder?: boolean
 }
 
 /**
@@ -44,68 +41,49 @@ export function GlassView({
   style,
   intensity = 25,
   borderRadius = RADIUS.lg,
-  showBorder = true,
+  showBorder = true
 }: GlassViewProps) {
   // ── iOS 26+ native Liquid Glass ──
   if (isLiquidGlassSupported) {
     return (
-      <LiquidGlassView
-        style={[
-          styles.glassBase,
-          { borderRadius },
-          showBorder && styles.glassBorder,
-          style,
-        ]}
-      >
+      <LiquidGlassView style={[styles.glassBase, { borderRadius }, showBorder && styles.glassBorder, style]}>
         {children}
       </LiquidGlassView>
-    );
+    )
   }
 
   // ── Android / iOS cũ: glassmorphism fallback ──
   return (
     <View
-      style={[
-        styles.glassBase,
-        styles.fallbackContainer,
-        { borderRadius },
-        showBorder && styles.glassBorder,
-        style,
-      ]}
+      style={[styles.glassBase, styles.fallbackContainer, { borderRadius }, showBorder && styles.glassBorder, style]}
     >
       {/* Blur layer */}
-      <BlurView
-        intensity={intensity}
-        tint="dark"
-        style={[StyleSheet.absoluteFillObject, { borderRadius }]}
-      />
+      <BlurView intensity={intensity} tint='dark' style={[StyleSheet.absoluteFillObject, { borderRadius }]} />
 
       {/* Inner tint overlay */}
       <View style={[StyleSheet.absoluteFillObject, styles.fallbackOverlay, { borderRadius }]} />
 
       {/* Content */}
-      <View style={styles.contentWrapper}>
-        {children}
-      </View>
+      <View style={styles.contentWrapper}>{children}</View>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   glassBase: {
-    overflow: 'hidden',
+    overflow: 'hidden'
   },
   glassBorder: {
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.12)'
   },
   fallbackContainer: {
-    backgroundColor: 'rgba(30, 20, 60, 0.55)',
+    backgroundColor: 'rgba(30, 20, 60, 0.55)'
   },
   fallbackOverlay: {
-    backgroundColor: 'rgba(176, 38, 255, 0.04)',
+    backgroundColor: 'rgba(176, 38, 255, 0.04)'
   },
   contentWrapper: {
-    zIndex: 1,
-  },
-});
+    zIndex: 1
+  }
+})

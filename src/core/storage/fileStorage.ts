@@ -5,22 +5,22 @@
  * @module core/storage
  */
 
-import * as FileSystem from 'expo-file-system/legacy';
-import { createLogger } from '@core/logger';
+import * as FileSystem from 'expo-file-system/legacy'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('file-storage');
+const logger = createLogger('file-storage')
 
 /** Thư mục gốc lưu nhạc offline */
-const MUSIC_DIR = `${FileSystem.documentDirectory}music/`;
+const MUSIC_DIR = `${FileSystem.documentDirectory}music/`
 
 /**
  * Đảm bảo thư mục nhạc tồn tại — tạo nếu chưa có.
  */
 async function ensureMusicDir(): Promise<void> {
-  const dirInfo = await FileSystem.getInfoAsync(MUSIC_DIR);
+  const dirInfo = await FileSystem.getInfoAsync(MUSIC_DIR)
   if (!dirInfo.exists) {
-    await FileSystem.makeDirectoryAsync(MUSIC_DIR, { intermediates: true });
-    logger.debug('Tạo thư mục nhạc offline', { path: MUSIC_DIR });
+    await FileSystem.makeDirectoryAsync(MUSIC_DIR, { intermediates: true })
+    logger.debug('Tạo thư mục nhạc offline', { path: MUSIC_DIR })
   }
 }
 
@@ -35,31 +35,30 @@ async function ensureMusicDir(): Promise<void> {
 export async function downloadTrack(
   trackId: string,
   url: string,
-  onProgress?: (progress: number) => void,
+  onProgress?: (progress: number) => void
 ): Promise<string> {
-  await ensureMusicDir();
-  const filePath = `${MUSIC_DIR}${trackId}.mp3`;
+  await ensureMusicDir()
+  const filePath = `${MUSIC_DIR}${trackId}.mp3`
 
-  logger.info('Bắt đầu tải bài hát', { trackId, url });
+  logger.info('Bắt đầu tải bài hát', { trackId, url })
 
   try {
     const downloadResumable = FileSystem.createDownloadResumable(url, filePath, {}, (downloadProgress) => {
-      const progress =
-        downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
-      onProgress?.(progress);
-    });
+      const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite
+      onProgress?.(progress)
+    })
 
-    const result = await downloadResumable.downloadAsync();
+    const result = await downloadResumable.downloadAsync()
 
     if (!result) {
-      throw new Error('Download trả về null');
+      throw new Error('Download trả về null')
     }
 
-    logger.info('Tải bài hát thành công', { trackId, filePath: result.uri });
-    return result.uri;
+    logger.info('Tải bài hát thành công', { trackId, filePath: result.uri })
+    return result.uri
   } catch (error) {
-    logger.error('Tải bài hát thất bại', { trackId, error });
-    throw error;
+    logger.error('Tải bài hát thất bại', { trackId, error })
+    throw error
   }
 }
 
@@ -70,9 +69,9 @@ export async function downloadTrack(
  * @returns true nếu file tồn tại trên thiết bị
  */
 export async function isTrackDownloaded(trackId: string): Promise<boolean> {
-  const filePath = `${MUSIC_DIR}${trackId}.mp3`;
-  const fileInfo = await FileSystem.getInfoAsync(filePath);
-  return fileInfo.exists;
+  const filePath = `${MUSIC_DIR}${trackId}.mp3`
+  const fileInfo = await FileSystem.getInfoAsync(filePath)
+  return fileInfo.exists
 }
 
 /**
@@ -82,9 +81,9 @@ export async function isTrackDownloaded(trackId: string): Promise<boolean> {
  * @returns Đường dẫn file hoặc null nếu chưa tải
  */
 export async function getTrackFilePath(trackId: string): Promise<string | null> {
-  const filePath = `${MUSIC_DIR}${trackId}.mp3`;
-  const fileInfo = await FileSystem.getInfoAsync(filePath);
-  return fileInfo.exists ? filePath : null;
+  const filePath = `${MUSIC_DIR}${trackId}.mp3`
+  const fileInfo = await FileSystem.getInfoAsync(filePath)
+  return fileInfo.exists ? filePath : null
 }
 
 /**
@@ -93,12 +92,12 @@ export async function getTrackFilePath(trackId: string): Promise<string | null> 
  * @param trackId - ID bài hát cần xoá
  */
 export async function deleteTrackFile(trackId: string): Promise<void> {
-  const filePath = `${MUSIC_DIR}${trackId}.mp3`;
+  const filePath = `${MUSIC_DIR}${trackId}.mp3`
   try {
-    await FileSystem.deleteAsync(filePath, { idempotent: true });
-    logger.info('Xoá file nhạc offline', { trackId });
+    await FileSystem.deleteAsync(filePath, { idempotent: true })
+    logger.info('Xoá file nhạc offline', { trackId })
   } catch (error) {
-    logger.error('Không thể xoá file nhạc', { trackId, error });
+    logger.error('Không thể xoá file nhạc', { trackId, error })
   }
 }
 
@@ -108,22 +107,22 @@ export async function deleteTrackFile(trackId: string): Promise<void> {
  * @returns Tổng dung lượng tính bằng bytes
  */
 export async function getTotalDownloadSize(): Promise<number> {
-  await ensureMusicDir();
+  await ensureMusicDir()
   try {
-    const files = await FileSystem.readDirectoryAsync(MUSIC_DIR);
-    let totalSize = 0;
+    const files = await FileSystem.readDirectoryAsync(MUSIC_DIR)
+    let totalSize = 0
 
     for (const file of files) {
-      const info = await FileSystem.getInfoAsync(`${MUSIC_DIR}${file}`);
+      const info = await FileSystem.getInfoAsync(`${MUSIC_DIR}${file}`)
       if (info.exists && !info.isDirectory) {
-        totalSize += info.size ?? 0;
+        totalSize += info.size ?? 0
       }
     }
 
-    logger.debug('Tổng dung lượng nhạc offline', { totalBytes: totalSize, fileCount: files.length });
-    return totalSize;
+    logger.debug('Tổng dung lượng nhạc offline', { totalBytes: totalSize, fileCount: files.length })
+    return totalSize
   } catch (error) {
-    logger.error('Không thể tính dung lượng offline', error);
-    return 0;
+    logger.error('Không thể tính dung lượng offline', error)
+    return 0
   }
 }

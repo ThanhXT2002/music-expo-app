@@ -4,4 +4,4 @@
  * @module app/(tabs)
  */
 
-export { default } from '@features/home/components/HomeScreen';
+export { default } from '@features/home/components/HomeScreen'

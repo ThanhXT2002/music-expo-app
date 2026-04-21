@@ -5,4 +5,4 @@
  * @module app/(tabs)
  */
 
-export { default } from '@features/search/components/SearchScreen';
+export { default } from '@features/search/components/SearchScreen'

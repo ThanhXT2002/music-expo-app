@@ -5,26 +5,26 @@
  * @module shared/components/ui
  */
 
-import { Pressable, Text, ActivityIndicator } from 'react-native';
+import { Pressable, ActivityIndicator, Text } from 'react-native'
 
 /**
  * Props của Button.
  */
 interface ButtonProps {
   /** Nội dung hiển thị trên nút */
-  title: string;
+  title: string
   /** Hàm xử lý khi nhấn nút */
-  onPress: () => void;
+  onPress: () => void
   /** Kiểu hiển thị: filled (mặc định), outline, ghost */
-  variant?: 'filled' | 'outline' | 'ghost';
+  variant?: 'filled' | 'outline' | 'ghost'
   /** Kích thước: sm, md (mặc định), lg */
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg'
   /** Vô hiệu hoá nút */
-  disabled?: boolean;
+  disabled?: boolean
   /** Hiển thị loading spinner thay vì text */
-  loading?: boolean;
+  loading?: boolean
   /** Class Tailwind bổ sung */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -42,27 +42,27 @@ export function Button({
   size = 'md',
   disabled = false,
   loading = false,
-  className = '',
+  className = ''
 }: ButtonProps) {
   // Xác định style dựa trên variant
   const variantStyles = {
     filled: 'bg-[#6C63FF] active:bg-[#4A42D4]',
     outline: 'border border-[#6C63FF] bg-transparent active:bg-[#6C63FF]/10',
-    ghost: 'bg-transparent active:bg-white/5',
-  };
+    ghost: 'bg-transparent active:bg-white/5'
+  }
 
   // Xác định style dựa trên size
   const sizeStyles = {
     sm: 'px-3 py-1.5',
     md: 'px-5 py-2.5',
-    lg: 'px-7 py-3.5',
-  };
+    lg: 'px-7 py-3.5'
+  }
 
   const textSizeStyles = {
     sm: 'text-xs',
     md: 'text-sm',
-    lg: 'text-base',
-  };
+    lg: 'text-base'
+  }
 
   return (
     <Pressable
@@ -80,5 +80,5 @@ export function Button({
         </Text>
       )}
     </Pressable>
-  );
+  )
 }

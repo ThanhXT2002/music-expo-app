@@ -4,19 +4,19 @@
  * @module features/search
  */
 
-import type { Track, Album, Artist } from '@shared/types/track';
+import type { Track, Album, Artist } from '@shared/types/track'
 
 /**
  * Kết quả tìm kiếm tổng hợp từ API.
  */
 export interface SearchResult {
   /** Danh sách bài hát khớp */
-  tracks: Track[];
+  tracks: Track[]
   /** Danh sách album khớp */
-  albums: Album[];
+  albums: Album[]
   /** Danh sách nghệ sĩ khớp */
-  artists: Artist[];
+  artists: Artist[]
 }
 
 /** Tab hiển thị kết quả tìm kiếm */
-export type SearchTab = 'all' | 'tracks' | 'albums' | 'artists';
+export type SearchTab = 'all' | 'tracks' | 'albums' | 'artists'

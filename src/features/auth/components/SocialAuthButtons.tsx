@@ -4,64 +4,65 @@
  * @module features/auth/components
  */
 
-import { View, Text, Pressable, StyleSheet, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import * as LocalAuthentication from 'expo-local-authentication';
-import { Fingerprint } from 'lucide-react-native';
-import { GoogleIcon, FacebookIcon } from '@shared/components/icons/SocialIcons';
-import { COLORS } from '@shared/constants/colors';
-import { createLogger } from '@core/logger';
-import { useAuth } from '../hooks/useAuth';
+import { View, Pressable, StyleSheet, Alert, Text } from 'react-native'
 
-const logger = createLogger('social-auth-buttons');
+import { useRouter } from 'expo-router'
+import * as LocalAuthentication from 'expo-local-authentication'
+import { Fingerprint } from 'lucide-react-native'
+import { GoogleIcon, FacebookIcon } from '@shared/components/icons/SocialIcons'
+import { COLORS } from '@shared/constants/colors'
+import { createLogger } from '@core/logger'
+import { useAuth } from '../hooks/useAuth'
+
+const logger = createLogger('social-auth-buttons')
 
 export function SocialAuthButtons({ hideBiometric = false }: { hideBiometric?: boolean }) {
-  const { restoreSession, loginWithGoogle, loginWithFacebook } = useAuth();
-  const router = useRouter();
+  const { restoreSession, loginWithGoogle, loginWithFacebook } = useAuth()
+  const router = useRouter()
 
   const handleBiometricLogin = async () => {
     try {
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const hasHardware = await LocalAuthentication.hasHardwareAsync()
       if (!hasHardware) {
-        Alert.alert('Lỗi', 'Thiết bị không hỗ trợ Sinh trắc học.');
-        return;
+        Alert.alert('Lỗi', 'Thiết bị không hỗ trợ Sinh trắc học.')
+        return
       }
 
       const authResult = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Đăng nhập vào XTMusic',
-        disableDeviceFallback: true,
-      });
+        disableDeviceFallback: true
+      })
 
       if (authResult.success) {
-        logger.info('Sinh trắc học thành công, khôi phục session');
-        await restoreSession();
-        router.replace('/(tabs)');
+        logger.info('Sinh trắc học thành công, khôi phục session')
+        await restoreSession()
+        router.replace('/(tabs)')
       }
     } catch (e: any) {
-      logger.error('Lỗi sinh trắc học', e);
-      Alert.alert('Thất bại', 'Xác thực sinh trắc học không thành công.');
+      logger.error('Lỗi sinh trắc học', e)
+      Alert.alert('Thất bại', 'Xác thực sinh trắc học không thành công.')
     }
-  };
+  }
 
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle();
-      router.replace('/(tabs)');
+      await loginWithGoogle()
+      router.replace('/(tabs)')
     } catch (e: any) {
-      logger.error('Lỗi Google login', e);
-      Alert.alert('Thất bại', 'Đăng nhập Google không thành công.');
+      logger.error('Lỗi Google login', e)
+      Alert.alert('Thất bại', 'Đăng nhập Google không thành công.')
     }
-  };
+  }
 
   const handleFacebookLogin = async () => {
     try {
-      await loginWithFacebook();
-      router.replace('/(tabs)');
+      await loginWithFacebook()
+      router.replace('/(tabs)')
     } catch (e: any) {
-      logger.error('Lỗi Facebook login', e);
-      Alert.alert('Thất bại', 'Đăng nhập Facebook không thành công.');
+      logger.error('Lỗi Facebook login', e)
+      Alert.alert('Thất bại', 'Đăng nhập Facebook không thành công.')
     }
-  };
+  }
 
   return (
     <View style={styles.socialList}>
@@ -88,14 +89,19 @@ export function SocialAuthButtons({ hideBiometric = false }: { hideBiometric?: b
         </View>
       </Pressable>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   socialList: { gap: 12, marginBottom: 24 },
   socialBtn: {
-    height: 54, borderRadius: 27, borderWidth: 1.5,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1.5,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12
   },
-  socialBtnText: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
-});
+  socialBtnText: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary }
+})

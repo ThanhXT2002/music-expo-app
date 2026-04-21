@@ -8,24 +8,24 @@
 /**
  * Trạng thái phát nhạc của audio engine.
  */
-export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped' | 'error';
+export type PlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped' | 'error'
 
 /**
  * Thông tin một bài hát trong hàng đợi audio.
  */
 export interface AudioTrack {
   /** ID duy nhất của bài hát */
-  id: string;
+  id: string
   /** Tên bài hát */
-  title: string;
+  title: string
   /** Tên nghệ sĩ */
-  artist: string;
+  artist: string
   /** URL stream audio */
-  streamUrl: string;
+  streamUrl: string
   /** URL ảnh bìa — dùng cho lock screen controls */
-  coverUrl?: string;
+  coverUrl?: string
   /** Thời lượng tính bằng giây */
-  durationSeconds: number;
+  durationSeconds: number
 }
 
 /**
@@ -33,11 +33,11 @@ export interface AudioTrack {
  */
 export interface AudioPlayerConfig {
   /** Cho phép phát nhạc trong background */
-  enableBackgroundPlayback: boolean;
+  enableBackgroundPlayback: boolean
   /** Cho phép hiển thị controls trên lock screen */
-  enableLockScreenControls: boolean;
+  enableLockScreenControls: boolean
   /** Âm lượng mặc định (0–1) */
-  defaultVolume: number;
+  defaultVolume: number
 }
 
 /**
@@ -45,11 +45,11 @@ export interface AudioPlayerConfig {
  */
 export interface PlaybackProgress {
   /** Vị trí hiện tại (giây) */
-  currentTime: number;
+  currentTime: number
   /** Tổng thời lượng (giây) */
-  duration: number;
+  duration: number
   /** Phần trăm tiến trình (0–1) */
-  progress: number;
+  progress: number
   /** Phần trăm đã buffer (0–1) */
-  buffered: number;
+  buffered: number
 }

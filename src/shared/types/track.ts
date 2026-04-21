@@ -10,29 +10,29 @@
  */
 export interface Track {
   /** ID duy nhất của bài hát */
-  id: string;
+  id: string
   /** Tên bài hát */
-  title: string;
+  title: string
   /** Tên nghệ sĩ */
-  artist: string;
+  artist: string
   /** ID nghệ sĩ — dùng để navigate sang trang nghệ sĩ */
-  artistId: string;
+  artistId: string
   /** Tên album chứa bài hát */
-  album?: string;
+  album?: string
   /** ID album */
-  albumId?: string;
+  albumId?: string
   /** URL ảnh bìa bài hát */
-  coverUrl: string;
+  coverUrl: string
   /** Thời lượng tính bằng giây */
-  durationSeconds: number;
+  durationSeconds: number
   /** URL stream — null nếu cần fetch từ API */
-  streamUrl?: string;
+  streamUrl?: string
   /** Bài hát đã được tải offline chưa */
-  isDownloaded?: boolean;
+  isDownloaded?: boolean
   /** Bài hát đã được thích chưa */
-  isLiked?: boolean;
+  isLiked?: boolean
   /** Thể loại nhạc */
-  genre?: string;
+  genre?: string
 }
 
 /**
@@ -40,21 +40,21 @@ export interface Track {
  */
 export interface Album {
   /** ID duy nhất */
-  id: string;
+  id: string
   /** Tên album */
-  title: string;
+  title: string
   /** Tên nghệ sĩ */
-  artist: string;
+  artist: string
   /** ID nghệ sĩ */
-  artistId: string;
+  artistId: string
   /** URL ảnh bìa */
-  coverUrl: string;
+  coverUrl: string
   /** Năm phát hành */
-  releaseYear: number;
+  releaseYear: number
   /** Số lượng bài hát */
-  trackCount: number;
+  trackCount: number
   /** Danh sách bài hát */
-  tracks?: Track[];
+  tracks?: Track[]
 }
 
 /**
@@ -62,17 +62,17 @@ export interface Album {
  */
 export interface Artist {
   /** ID duy nhất */
-  id: string;
+  id: string
   /** Tên nghệ sĩ */
-  name: string;
+  name: string
   /** URL ảnh đại diện */
-  avatarUrl: string;
+  avatarUrl: string
   /** Số lượng người theo dõi */
-  followers: number;
+  followers: number
   /** Mô tả ngắn */
-  bio?: string;
+  bio?: string
   /** Danh sách thể loại */
-  genres?: string[];
+  genres?: string[]
 }
 
 /**
@@ -80,25 +80,25 @@ export interface Artist {
  */
 export interface Playlist {
   /** ID duy nhất */
-  id: string;
+  id: string
   /** Tên playlist */
-  title: string;
+  title: string
   /** Mô tả playlist */
-  description?: string;
+  description?: string
   /** URL ảnh bìa */
-  coverUrl?: string;
+  coverUrl?: string
   /** ID người tạo */
-  ownerId: string;
+  ownerId: string
   /** Tên người tạo */
-  ownerName: string;
+  ownerName: string
   /** Số lượng bài hát */
-  trackCount: number;
+  trackCount: number
   /** Playlist công khai hay riêng tư */
-  isPublic: boolean;
+  isPublic: boolean
   /** Danh sách bài hát */
-  tracks?: Track[];
+  tracks?: Track[]
   /** Ngày tạo */
-  createdAt: string;
+  createdAt: string
   /** Ngày cập nhật */
-  updatedAt: string;
+  updatedAt: string
 }

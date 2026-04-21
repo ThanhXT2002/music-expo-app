@@ -4,20 +4,20 @@
  * @module features/playlist/store
  */
 
-import { create } from 'zustand';
-import { createLogger } from '@core/logger';
+import { create } from 'zustand'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('playlist-store');
+const logger = createLogger('playlist-store')
 
 interface PlaylistUIStore {
   /** Đang hiển thị modal tạo playlist */
-  showCreateModal: boolean;
+  showCreateModal: boolean
   /** ID playlist đang được chỉnh sửa */
-  editingPlaylistId: string | null;
+  editingPlaylistId: string | null
 
-  openCreateModal: () => void;
-  closeCreateModal: () => void;
-  setEditingPlaylist: (id: string | null) => void;
+  openCreateModal: () => void
+  closeCreateModal: () => void
+  setEditingPlaylist: (id: string | null) => void
 }
 
 export const usePlaylistStore = create<PlaylistUIStore>((set) => ({
@@ -25,17 +25,17 @@ export const usePlaylistStore = create<PlaylistUIStore>((set) => ({
   editingPlaylistId: null,
 
   openCreateModal: () => {
-    logger.debug('Mở modal tạo playlist');
-    set({ showCreateModal: true });
+    logger.debug('Mở modal tạo playlist')
+    set({ showCreateModal: true })
   },
 
   closeCreateModal: () => {
-    logger.debug('Đóng modal tạo playlist');
-    set({ showCreateModal: false });
+    logger.debug('Đóng modal tạo playlist')
+    set({ showCreateModal: false })
   },
 
   setEditingPlaylist: (id) => {
-    logger.debug('Chọn playlist để chỉnh sửa', { playlistId: id });
-    set({ editingPlaylistId: id });
-  },
-}));
+    logger.debug('Chọn playlist để chỉnh sửa', { playlistId: id })
+    set({ editingPlaylistId: id })
+  }
+}))

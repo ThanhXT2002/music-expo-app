@@ -4,4 +4,4 @@
  * @module app/(tabs)
  */
 
-export { default } from '@features/library/components/LibraryScreen';
+export { default } from '@features/library/components/LibraryScreen'

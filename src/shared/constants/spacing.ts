@@ -15,8 +15,8 @@ export const SPACING = {
   '2xl': 24,
   '3xl': 32,
   '4xl': 40,
-  '5xl': 48,
-} as const;
+  '5xl': 48
+} as const
 
 /** Border radius tokens */
 export const RADIUS = {
@@ -25,8 +25,8 @@ export const RADIUS = {
   lg: 16,
   xl: 20,
   '2xl': 24,
-  full: 9999,
-} as const;
+  full: 9999
+} as const
 
 /** Font size tokens */
 export const FONT_SIZE = {
@@ -45,8 +45,8 @@ export const FONT_SIZE = {
   /** Hero titles */
   '3xl': 28,
   /** Display */
-  '4xl': 34,
-} as const;
+  '4xl': 34
+} as const
 
 /** Consistent shadow for glass/glow effects */
 export const SHADOWS = {
@@ -56,7 +56,7 @@ export const SHADOWS = {
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 20,
-    elevation: 8,
+    elevation: 8
   },
   /** Soft card shadow */
   card: {
@@ -64,7 +64,7 @@ export const SHADOWS = {
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 4
   },
   /** Ambient blur glow — player background */
   ambient: {
@@ -72,9 +72,9 @@ export const SHADOWS = {
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.4,
     shadowRadius: 30,
-    elevation: 12,
-  },
-} as const;
+    elevation: 12
+  }
+} as const
 
 /** Tab bar & layout constants */
 export const LAYOUT = {
@@ -83,5 +83,5 @@ export const LAYOUT = {
   /** Padding bottom cho content khi có tab bar */
   tabBarOffset: 100,
   /** Padding bottom cho content khi có MiniPlayer + tab bar */
-  miniPlayerOffset: 160,
-} as const;
+  miniPlayerOffset: 160
+} as const

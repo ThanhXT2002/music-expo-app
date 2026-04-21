@@ -16,11 +16,11 @@
  * formatDuration(5);    // "0:05"
  */
 export function formatDuration(seconds: number): string {
-  if (seconds < 0 || !Number.isFinite(seconds)) return '0:00';
+  if (seconds < 0 || !Number.isFinite(seconds)) return '0:00'
 
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
 /**
@@ -30,12 +30,12 @@ export function formatDuration(seconds: number): string {
  * @returns Chuỗi tiếng Việt, ví dụ: 225 → "3 phút 45 giây"
  */
 export function formatDurationVN(seconds: number): string {
-  if (seconds < 0 || !Number.isFinite(seconds)) return '0 giây';
+  if (seconds < 0 || !Number.isFinite(seconds)) return '0 giây'
 
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
 
-  if (mins === 0) return `${secs} giây`;
-  if (secs === 0) return `${mins} phút`;
-  return `${mins} phút ${secs} giây`;
+  if (mins === 0) return `${secs} giây`
+  if (secs === 0) return `${mins} phút`
+  return `${mins} phút ${secs} giây`
 }

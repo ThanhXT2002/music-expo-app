@@ -4,4 +4,4 @@
  * @module app/auth
  */
 
-export { default } from '@features/auth/components/RegisterScreen';
+export { default } from '@features/auth/components/RegisterScreen'

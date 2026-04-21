@@ -14,54 +14,53 @@
  * @module features/player
  */
 
-import {
-  View, Text, Pressable, StyleSheet, Dimensions, Animated, Easing,
-} from 'react-native';
-import { useEffect, useRef } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Pressable, StyleSheet, Dimensions, Animated, Easing, Text } from 'react-native'
+
+import { useEffect, useRef } from 'react'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
+import { Image } from 'expo-image'
+import { LinearGradient } from 'expo-linear-gradient'
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
   cancelAnimation,
-  Easing as ReanimatedEasing,
-} from 'react-native-reanimated';
+  Easing as ReanimatedEasing
+} from 'react-native-reanimated'
 import {
-  ChevronDown, Heart, ListMusic, SkipBack, SkipForward,
-  Shuffle, Repeat, Repeat1, MessageSquareText, Menu,
-  Download,
-} from 'lucide-react-native';
-import { createLogger } from '@core/logger';
-import { usePlayer } from '../hooks/usePlayer';
-import { ProgressBar } from './ProgressBar';
-import { useDownloadStore } from '@features/downloads/store/downloadStore';
-import { COLORS } from '@shared/constants/colors';
-import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing';
+  ChevronDown,
+  Heart,
+  ListMusic,
+  SkipBack,
+  SkipForward,
+  Shuffle,
+  Repeat,
+  Repeat1,
+  MessageSquareText,
+  Menu,
+  Download
+} from 'lucide-react-native'
+import { createLogger } from '@core/logger'
+import { usePlayer } from '../hooks/usePlayer'
+import { ProgressBar } from './ProgressBar'
+import { useDownloadStore } from '@features/downloads/store/downloadStore'
+import { COLORS } from '@shared/constants/colors'
+import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 
-const logger = createLogger('player-screen');
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COVER_SIZE = SCREEN_WIDTH * 0.70;
+const logger = createLogger('player-screen')
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const COVER_SIZE = SCREEN_WIDTH * 0.7
 
 interface PlayerScreenProps {
-  trackId: string;
+  trackId: string
 }
 
 // ─── Spinning Disc Component ─────────────────────────────────────────────────
 
-function SpinningDisc({
-  uri,
-  isPlaying,
-  size,
-}: {
-  uri: string;
-  isPlaying: boolean;
-  size: number;
-}) {
-  const rotation = useSharedValue(0);
+function SpinningDisc({ uri, isPlaying, size }: { uri: string; isPlaying: boolean; size: number }) {
+  const rotation = useSharedValue(0)
 
   useEffect(() => {
     if (isPlaying) {
@@ -69,92 +68,89 @@ function SpinningDisc({
       rotation.value = withRepeat(
         withTiming(rotation.value + 360, {
           duration: 8000,
-          easing: ReanimatedEasing.linear,
+          easing: ReanimatedEasing.linear
         }),
         -1, // Lặp vô cực
         false // Không chạy ngược lại
-      );
+      )
     } else {
       // Dừng ngay lập tức (giữ nguyên vị trí)
-      cancelAnimation(rotation);
+      cancelAnimation(rotation)
     }
-  }, [isPlaying, rotation]);
+  }, [isPlaying, rotation])
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
+    transform: [{ rotate: `${rotation.value}deg` }]
+  }))
 
   return (
     <View style={[styles.discContainer, { width: size, height: size }]}>
       {/* Disc shadow glow */}
       <View style={[styles.discGlow, { width: size + 20, height: size + 20 }]} />
 
-      <Reanimated.View
-        style={[
-          styles.disc,
-          { width: size, height: size, borderRadius: size / 2 },
-          animatedStyle,
-        ]}
-      >
+      <Reanimated.View style={[styles.disc, { width: size, height: size, borderRadius: size / 2 }, animatedStyle]}>
         <Image
           source={{ uri }}
           style={[styles.discImage, { width: size, height: size, borderRadius: size / 2 }]}
-          contentFit="cover"
+          contentFit='cover'
           transition={400}
         />
         {/* Lỗ đĩa than ở giữa */}
         <View style={styles.discHole} />
       </Reanimated.View>
     </View>
-  );
+  )
 }
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 export default function PlayerScreen({ trackId }: PlayerScreenProps) {
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
+  const insets = useSafeAreaInsets()
+  const router = useRouter()
   const {
-    currentTrack, isPlaying, progress, currentTime, duration,
-    shuffleEnabled, repeatMode,
-    play, pause, next, previous, seekTo,
-    toggleShuffle, toggleRepeat,
-  } = usePlayer(trackId);
+    currentTrack,
+    isPlaying,
+    progress,
+    currentTime,
+    duration,
+    shuffleEnabled,
+    repeatMode,
+    play,
+    pause,
+    next,
+    previous,
+    seekTo,
+    toggleShuffle,
+    toggleRepeat
+  } = usePlayer(trackId)
 
   useEffect(() => {
-    logger.debug('PlayerScreen mount', { trackId });
-    return () => logger.debug('PlayerScreen unmount');
-  }, [trackId]);
+    logger.debug('PlayerScreen mount', { trackId })
+    return () => logger.debug('PlayerScreen unmount')
+  }, [trackId])
 
   const handlePlayPause = async () => {
     if (isPlaying) {
-      await pause();
+      await pause()
     } else {
-      await play();
+      await play()
     }
-  };
+  }
 
   // Fallback cover
-  const coverUrl = currentTrack?.coverUrl || 'https://picsum.photos/seed/player/400/400';
+  const coverUrl = currentTrack?.coverUrl || 'https://picsum.photos/seed/player/400/400'
 
   // ─── Repeat icon & color logic ───
-  const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat;
-  const repeatColor = repeatMode !== 'none' ? COLORS.primary : COLORS.textMuted;
-  const shuffleColor = shuffleEnabled ? COLORS.primary : COLORS.textMuted;
+  const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat
+  const repeatColor = repeatMode !== 'none' ? COLORS.primary : COLORS.textMuted
+  const shuffleColor = shuffleEnabled ? COLORS.primary : COLORS.textMuted
 
-  const isDownloaded = useDownloadStore((state) => 
-    state.offlineSongs.some((s) => s.id === trackId)
-  );
+  const isDownloaded = useDownloadStore((state) => state.offlineSongs.some((s) => s.id === trackId))
 
   return (
     <View style={styles.container}>
       {/* ── Ambient background ── */}
-      <Image
-        source={{ uri: coverUrl }}
-        style={styles.ambientBg}
-        contentFit="cover"
-        blurRadius={80}
-      />
+      <Image source={{ uri: coverUrl }} style={styles.ambientBg} contentFit='cover' blurRadius={80} />
       <LinearGradient
         colors={['rgba(8,3,22,0.4)', 'rgba(8,3,22,0.75)', COLORS.background]}
         style={styles.ambientOverlay}
@@ -176,11 +172,7 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
 
       {/* ── Spinning Disc (Album Art) ── */}
       <View style={styles.coverSection}>
-        <SpinningDisc
-          uri={coverUrl}
-          isPlaying={isPlaying}
-          size={COVER_SIZE}
-        />
+        <SpinningDisc uri={coverUrl} isPlaying={isPlaying} size={COVER_SIZE} />
       </View>
 
       {/* ── Song Info — Centered ── */}
@@ -212,12 +204,7 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
 
       {/* ── Progress Bar ── */}
       <View style={styles.progressSection}>
-        <ProgressBar
-          progress={progress}
-          currentTime={currentTime}
-          duration={duration}
-          onSeek={seekTo}
-        />
+        <ProgressBar progress={progress} currentTime={currentTime} duration={duration} onSeek={seekTo} />
       </View>
 
       {/* ── Controls Row ── */}
@@ -267,7 +254,7 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
         </Pressable> */}
       </View>
     </View>
-  );
+  )
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
@@ -275,14 +262,14 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.background
   },
   ambientBg: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.55,
+    opacity: 0.55
   },
   ambientOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFillObject
   },
 
   // ── Header ──
@@ -291,29 +278,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.xs,
+    paddingBottom: SPACING.xs
   },
   headerBtn: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
+    borderRadius: 20
   },
   headerCenter: {
     alignItems: 'center',
-    flex: 1,
+    flex: 1
   },
   headerLabel: {
     fontSize: FONT_SIZE.sm,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    letterSpacing: 2,
+    letterSpacing: 2
   },
   headerSublabel: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textMuted,
-    marginTop: 2,
+    marginTop: 2
   },
 
   // ── Spinning Disc ──
@@ -321,11 +308,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.lg
   },
   discContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   discGlow: {
     position: 'absolute',
@@ -335,12 +322,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 30,
-    elevation: 15,
+    elevation: 15
   },
   disc: {
     overflow: 'hidden',
     borderWidth: 3,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: 'rgba(255, 255, 255, 0.15)'
   },
   discImage: {},
   discHole: {
@@ -354,27 +341,27 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     marginTop: -12,
-    marginLeft: -12,
+    marginLeft: -12
   },
 
   // ── Song Info ──
   infoSection: {
     alignItems: 'center',
     paddingHorizontal: SPACING['2xl'],
-    marginTop: SPACING.lg,
+    marginTop: SPACING.lg
   },
   songTitle: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
     color: COLORS.textPrimary,
     textAlign: 'center',
-    letterSpacing: -0.3,
+    letterSpacing: -0.3
   },
   songArtist: {
     fontSize: FONT_SIZE.md,
     color: COLORS.textSecondary,
     marginTop: SPACING.xs,
-    textAlign: 'center',
+    textAlign: 'center'
   },
 
   // ── Action Row ──
@@ -383,20 +370,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING['2xl'] + SPACING.sm,
-    marginTop: SPACING.lg,
+    marginTop: SPACING.lg
   },
   actionRight: {
     flexDirection: 'row',
-    gap: SPACING.md,
+    gap: SPACING.md
   },
   actionBtn: {
-    padding: SPACING.sm,
+    padding: SPACING.sm
   },
 
   // ── Progress ──
   progressSection: {
     paddingHorizontal: SPACING['2xl'],
-    marginTop: SPACING.xs,
+    marginTop: SPACING.xs
   },
 
   // ── Controls ──
@@ -406,10 +393,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: SPACING.xl,
     marginTop: SPACING.md,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.lg
   },
   controlBtn: {
-    padding: SPACING.sm,
+    padding: SPACING.sm
   },
   playBtn: {
     width: 64,
@@ -422,17 +409,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 8
   },
   pauseIconGroup: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 6
   },
   pauseBar: {
     width: 6,
     height: 24,
     backgroundColor: COLORS.background,
-    borderRadius: 2,
+    borderRadius: 2
   },
   playIcon: {
     width: 0,
@@ -443,7 +430,7 @@ const styles = StyleSheet.create({
     borderLeftColor: COLORS.background,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
-    marginLeft: 4,
+    marginLeft: 4
   },
 
   // ── Bottom ──
@@ -451,14 +438,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: SPACING['5xl'],
-    marginTop: SPACING['3xl'],
+    marginTop: SPACING['3xl']
   },
   bottomBtn: {
     alignItems: 'center',
-    gap: SPACING.xs,
+    gap: SPACING.xs
   },
   bottomBtnText: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-  },
-});
+    color: COLORS.textMuted
+  }
+})

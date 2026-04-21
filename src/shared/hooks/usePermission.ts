@@ -5,24 +5,24 @@
  * @module shared/hooks
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import { createLogger } from '@core/logger';
+import { useCallback, useEffect, useState } from 'react'
+import { createLogger } from '@core/logger'
 
-const logger = createLogger('use-permission');
+const logger = createLogger('use-permission')
 
 /** Trạng thái quyền */
-type PermissionStatus = 'undetermined' | 'granted' | 'denied';
+type PermissionStatus = 'undetermined' | 'granted' | 'denied'
 
 /**
  * Giá trị trả về của hook usePermission.
  */
 interface UsePermissionReturn {
   /** Trạng thái quyền hiện tại */
-  status: PermissionStatus;
+  status: PermissionStatus
   /** true nếu đang loading */
-  isLoading: boolean;
+  isLoading: boolean
   /** Hàm xin quyền từ người dùng */
-  request: () => Promise<boolean>;
+  request: () => Promise<boolean>
 }
 
 /**
@@ -41,42 +41,42 @@ interface UsePermissionReturn {
  */
 export function usePermission(
   checkFn: () => Promise<{ status: string }>,
-  requestFn: () => Promise<{ status: string }>,
+  requestFn: () => Promise<{ status: string }>
 ): UsePermissionReturn {
-  const [status, setStatus] = useState<PermissionStatus>('undetermined');
-  const [isLoading, setIsLoading] = useState(true);
+  const [status, setStatus] = useState<PermissionStatus>('undetermined')
+  const [isLoading, setIsLoading] = useState(true)
 
   // Kiểm tra quyền khi hook mount
   useEffect(() => {
     const checkPermission = async () => {
       try {
-        const result = await checkFn();
-        setStatus(result.status as PermissionStatus);
-        logger.debug('Kiểm tra permission', { status: result.status });
+        const result = await checkFn()
+        setStatus(result.status as PermissionStatus)
+        logger.debug('Kiểm tra permission', { status: result.status })
       } catch (error) {
-        logger.error('Lỗi kiểm tra permission', error);
+        logger.error('Lỗi kiểm tra permission', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    checkPermission();
+    checkPermission()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [])
 
   const request = useCallback(async (): Promise<boolean> => {
-    logger.info('Xin quyền từ người dùng');
+    logger.info('Xin quyền từ người dùng')
     try {
-      const result = await requestFn();
-      const granted = result.status === 'granted';
-      setStatus(result.status as PermissionStatus);
-      logger.info('Kết quả xin quyền', { granted, status: result.status });
-      return granted;
+      const result = await requestFn()
+      const granted = result.status === 'granted'
+      setStatus(result.status as PermissionStatus)
+      logger.info('Kết quả xin quyền', { granted, status: result.status })
+      return granted
     } catch (error) {
-      logger.error('Lỗi xin quyền', error);
-      return false;
+      logger.error('Lỗi xin quyền', error)
+      return false
     }
-  }, [requestFn]);
+  }, [requestFn])
 
-  return { status, isLoading, request };
+  return { status, isLoading, request }
 }

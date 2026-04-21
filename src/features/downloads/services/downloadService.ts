@@ -12,25 +12,20 @@
  * @module features/downloads/services
  */
 
-import { apiClient } from '@core/api/apiClient';
-import { API_ENDPOINTS } from '@core/api/endpoints';
-import { createLogger } from '@core/logger';
-import * as fileStorage from '@core/storage/fileStorage';
-import { 
-  saveOfflineSong, 
-  deleteOfflineSong, 
-  saveDownloadHistory, 
-  deleteDownloadHistory 
-} from '@core/data/database';
-import type { SongInfo, SongStatusResponse } from '../types';
+import { apiClient } from '@core/api/apiClient'
+import { API_ENDPOINTS } from '@core/api/endpoints'
+import { createLogger } from '@core/logger'
+import * as fileStorage from '@core/storage/fileStorage'
+import { saveOfflineSong, deleteOfflineSong, saveDownloadHistory, deleteDownloadHistory } from '@core/data/database'
+import type { SongInfo, SongStatusResponse } from '../types'
 
-const logger = createLogger('download-service');
+const logger = createLogger('download-service')
 
 // ─── YouTube URL Validation ──────────────────────────────────────────────────
 
 /** Regex nhận dạng các format URL YouTube phổ biến */
 const YOUTUBE_URL_REGEX =
-  /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/|music\.youtube\.com\/watch\?v=)[\w-]+/i;
+  /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/|music\.youtube\.com\/watch\?v=)[\w-]+/i
 
 /**
  * Kiểm tra chuỗi có phải URL YouTube hợp lệ không.
@@ -39,7 +34,7 @@ const YOUTUBE_URL_REGEX =
  * @returns true nếu là URL YouTube
  */
 export function isYoutubeUrl(url: string): boolean {
-  return YOUTUBE_URL_REGEX.test(url.trim());
+  return YOUTUBE_URL_REGEX.test(url.trim())
 }
 
 // ─── API: Lấy thông tin bài hát ──────────────────────────────────────────────
@@ -52,18 +47,18 @@ export function isYoutubeUrl(url: string): boolean {
  * @returns Metadata bài hát (id, title, artist, thumbnail, duration...)
  */
 export async function fetchSongInfo(youtubeUrl: string): Promise<SongInfo> {
-  logger.info('Lấy thông tin bài hát từ YouTube', { youtubeUrl });
+  logger.info('Lấy thông tin bài hát từ YouTube', { youtubeUrl })
   try {
     const response = await apiClient.post(API_ENDPOINTS.SONG_INFO, {
-      youtube_url: youtubeUrl,
-    });
-    const data = response.data?.data;
-    if (!data) throw new Error('Server không trả về thông tin bài hát');
-    logger.info('Nhận metadata thành công', { id: data.id, title: data.title });
-    return data as SongInfo;
+      youtube_url: youtubeUrl
+    })
+    const data = response.data?.data
+    if (!data) throw new Error('Server không trả về thông tin bài hát')
+    logger.info('Nhận metadata thành công', { id: data.id, title: data.title })
+    return data as SongInfo
   } catch (error) {
-    logger.error('Lấy thông tin bài hát thất bại', { youtubeUrl, error });
-    throw error;
+    logger.error('Lấy thông tin bài hát thất bại', { youtubeUrl, error })
+    throw error
   }
 }
 
@@ -77,11 +72,11 @@ export async function fetchSongInfo(youtubeUrl: string): Promise<SongInfo> {
  */
 export async function pollSongStatus(songId: string): Promise<SongStatusResponse> {
   try {
-    const response = await apiClient.get(API_ENDPOINTS.SONG_STATUS(songId));
-    return response.data?.data as SongStatusResponse;
+    const response = await apiClient.get(API_ENDPOINTS.SONG_STATUS(songId))
+    return response.data?.data as SongStatusResponse
   } catch (error) {
-    logger.error('Poll trạng thái thất bại', { songId, error });
-    throw error;
+    logger.error('Poll trạng thái thất bại', { songId, error })
+    throw error
   }
 }
 
@@ -94,19 +89,16 @@ export async function pollSongStatus(songId: string): Promise<SongStatusResponse
  * @param limit - Số lượng kết quả tối đa
  * @returns Danh sách bài hát matchs
  */
-export async function searchCompletedSongs(
-  keyword: string,
-  limit: number = 20,
-): Promise<SongInfo[]> {
-  logger.info('Tìm kiếm bài hát trên server', { keyword });
+export async function searchCompletedSongs(keyword: string, limit: number = 20): Promise<SongInfo[]> {
+  logger.info('Tìm kiếm bài hát trên server', { keyword })
   try {
     const response = await apiClient.get(API_ENDPOINTS.SONGS_COMPLETED, {
-      params: { key: keyword, limit },
-    });
-    return (response.data?.data ?? []) as SongInfo[];
+      params: { key: keyword, limit }
+    })
+    return (response.data?.data ?? []) as SongInfo[]
   } catch (error) {
-    logger.error('Tìm kiếm thất bại', { keyword, error });
-    return [];
+    logger.error('Tìm kiếm thất bại', { keyword, error })
+    return []
   }
 }
 
@@ -119,17 +111,14 @@ export async function searchCompletedSongs(
  * @param onProgress - Callback tiến trình tải (0–1)
  * @returns Đường dẫn file local đã tải
  */
-export async function downloadAndSave(
-  songInfo: SongInfo,
-  onProgress?: (progress: number) => void,
-): Promise<string> {
-  logger.info('Bắt đầu tải file MP3', { id: songInfo.id, title: songInfo.title });
+export async function downloadAndSave(songInfo: SongInfo, onProgress?: (progress: number) => void): Promise<string> {
+  logger.info('Bắt đầu tải file MP3', { id: songInfo.id, title: songInfo.title })
 
   // Kiểm tra đã tải trước đó
-  const alreadyDownloaded = await fileStorage.isTrackDownloaded(songInfo.id);
+  const alreadyDownloaded = await fileStorage.isTrackDownloaded(songInfo.id)
   if (alreadyDownloaded) {
-    logger.info('File đã có trên đĩa — đồng bộ lại SQLite', { id: songInfo.id });
-    const path = await fileStorage.getTrackFilePath(songInfo.id);
+    logger.info('File đã có trên đĩa — đồng bộ lại SQLite', { id: songInfo.id })
+    const path = await fileStorage.getTrackFilePath(songInfo.id)
     // Luôn đảm bảo record SQLite tồn tại (phòng trường hợp lần trước save thất bại)
     await saveOfflineSong({
       id: songInfo.id,
@@ -137,18 +126,18 @@ export async function downloadAndSave(
       artist: songInfo.artist,
       thumbnailUrl: songInfo.thumbnail_url,
       localAudioUri: path!,
-      duration: songInfo.duration,
-    });
-    await saveDownloadHistory(songInfo.id);
-    return path!;
+      duration: songInfo.duration
+    })
+    await saveDownloadHistory(songInfo.id)
+    return path!
   }
 
   // URL stream từ backend
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? '';
-  const streamUrl = `${BASE_URL}${API_ENDPOINTS.SONG_PROXY_DOWNLOAD(songInfo.id)}`;
+  const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? ''
+  const streamUrl = `${BASE_URL}${API_ENDPOINTS.SONG_PROXY_DOWNLOAD(songInfo.id)}`
 
   // Tải file vật lý
-  const filePath = await fileStorage.downloadTrack(songInfo.id, streamUrl, onProgress);
+  const filePath = await fileStorage.downloadTrack(songInfo.id, streamUrl, onProgress)
 
   // Lưu vào SQLite
   await saveOfflineSong({
@@ -157,12 +146,12 @@ export async function downloadAndSave(
     artist: songInfo.artist,
     thumbnailUrl: songInfo.thumbnail_url,
     localAudioUri: filePath,
-    duration: songInfo.duration,
-  });
-  await saveDownloadHistory(songInfo.id);
+    duration: songInfo.duration
+  })
+  await saveDownloadHistory(songInfo.id)
 
-  logger.info('Tải và lưu thành công', { id: songInfo.id, filePath });
-  return filePath;
+  logger.info('Tải và lưu thành công', { id: songInfo.id, filePath })
+  return filePath
 }
 
 // ─── File Delete: Xoá bài hát offline ────────────────────────────────────────
@@ -174,8 +163,8 @@ export async function downloadAndSave(
  * @param songId - YouTube video ID
  */
 export async function removeDownloadedSong(songId: string): Promise<void> {
-  logger.info('Xoá bài hát khỏi lịch sử tải (Soft Delete)', { songId });
-  await deleteDownloadHistory(songId);
+  logger.info('Xoá bài hát khỏi lịch sử tải (Soft Delete)', { songId })
+  await deleteDownloadHistory(songId)
 }
 
 /**
@@ -185,8 +174,8 @@ export async function removeDownloadedSong(songId: string): Promise<void> {
  * @param songId - YouTube video ID
  */
 export async function hardDeleteLocalSong(songId: string): Promise<void> {
-  logger.info('Xoá vĩnh viễn bài hát offline (Hard Delete)', { songId });
-  await fileStorage.deleteTrackFile(songId);
-  await deleteOfflineSong(songId);
-  await deleteDownloadHistory(songId);
+  logger.info('Xoá vĩnh viễn bài hát offline (Hard Delete)', { songId })
+  await fileStorage.deleteTrackFile(songId)
+  await deleteOfflineSong(songId)
+  await deleteDownloadHistory(songId)
 }

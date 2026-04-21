@@ -5,16 +5,16 @@
  * @module shared/components
  */
 
-import React from 'react';
-import { type ViewStyle, type StyleProp, StyleSheet } from 'react-native';
-import { GlassView } from './GlassView';
-import { SPACING, RADIUS } from '@shared/constants/spacing';
+import React from 'react'
+import { type ViewStyle, type StyleProp, StyleSheet } from 'react-native'
+import { GlassView } from './GlassView'
+import { SPACING, RADIUS } from '@shared/constants/spacing'
 
 interface GlassCardProps {
-  children: React.ReactNode;
-  style?: StyleProp<ViewStyle>;
+  children: React.ReactNode
+  style?: StyleProp<ViewStyle>
   /** Cường độ blur */
-  intensity?: number;
+  intensity?: number
 }
 
 /**
@@ -27,19 +27,14 @@ interface GlassCardProps {
  */
 export function GlassCard({ children, style, intensity = 20 }: GlassCardProps) {
   return (
-    <GlassView
-      intensity={intensity}
-      borderRadius={RADIUS.lg}
-      showBorder
-      style={[styles.card, style]}
-    >
+    <GlassView intensity={intensity} borderRadius={RADIUS.lg} showBorder style={[styles.card, style]}>
       {children}
     </GlassView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   card: {
-    padding: SPACING.lg,
-  },
-});
+    padding: SPACING.lg
+  }
+})

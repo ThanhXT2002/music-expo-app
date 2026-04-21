@@ -5,18 +5,19 @@
  * @module shared/components
  */
 
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
-import { COLORS } from '@shared/constants/colors';
-import { FONT_SIZE, SPACING } from '@shared/constants/spacing';
+import { View, Pressable, StyleSheet, Text } from 'react-native'
+
+import { ChevronRight } from 'lucide-react-native'
+import { COLORS } from '@shared/constants/colors'
+import { FONT_SIZE, SPACING } from '@shared/constants/spacing'
 
 interface SectionHeaderProps {
   /** Tiêu đề section */
-  title: string;
+  title: string
   /** Callback khi nhấn "Xem tất cả" */
-  onSeeAll?: () => void;
+  onSeeAll?: () => void
   /** Text tuỳ chỉnh cho action button */
-  actionText?: string;
+  actionText?: string
 }
 
 /**
@@ -33,7 +34,7 @@ export function SectionHeader({ title, onSeeAll, actionText = 'Xem tất cả' }
         </Pressable>
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -42,21 +43,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.md
   },
   title: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
-    color: COLORS.textPrimary,
+    color: COLORS.textPrimary
   },
   action: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 2
   },
   actionText: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.primary,
-    fontWeight: '500',
-  },
-});
+    fontWeight: '500'
+  }
+})
