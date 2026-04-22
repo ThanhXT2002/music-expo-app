@@ -4,4 +4,4 @@
  * @module app/auth
  */
 
-export { default } from '@features/auth/components/PrivacyPolicyScreen'
+export { default } from '@shared/components/screens/PrivacyPolicyScreen'

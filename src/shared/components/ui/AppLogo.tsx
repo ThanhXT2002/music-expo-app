@@ -27,7 +27,14 @@ interface AppLogoProps {
 export function AppLogo({ size = 80, style }: AppLogoProps) {
   return (
     <View style={[styles.container, style]}>
-      <Image source={LOGO_SOURCE} style={{ width: size, height: size }} resizeMode='contain' />
+      <Image 
+        source={LOGO_SOURCE} 
+        style={[
+          { width: size, height: size },
+          style?.borderRadius !== undefined && { borderRadius: style.borderRadius }
+        ]} 
+        resizeMode='contain' 
+      />
     </View>
   )
 }

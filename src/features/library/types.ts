@@ -7,7 +7,7 @@
 import type { Track, Album } from '@shared/types/track'
 
 /** Tab hiển thị trong library */
-export type LibraryTab = 'tracks' | 'albums' | 'playlists' | 'downloads'
+export type LibraryTab = 'tracks' | 'albums' | 'favorites'
 
 /** Bộ lọc sắp xếp */
 export type SortBy = 'recent' | 'title' | 'artist'

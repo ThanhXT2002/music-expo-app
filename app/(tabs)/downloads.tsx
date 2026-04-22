@@ -348,13 +348,8 @@ export default function DownloadsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
           <Text style={styles.headerTitle}>Tải nhạc</Text>
-          {offlineSongs.length > 0 && (
-            <View style={styles.headerBadge}>
-              <Text style={styles.headerBadgeText}>{offlineSongs.length}</Text>
-            </View>
-          )}
         </View>
 
         {/* Search Bar */}

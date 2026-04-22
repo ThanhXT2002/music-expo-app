@@ -38,9 +38,8 @@ function LibraryFilterTabs({
 }) {
   const tabs: { key: LibraryTab; label: string }[] = [
     { key: 'tracks', label: 'Bài hát' },
-    { key: 'playlists', label: 'Playlist' },
     { key: 'albums', label: 'Album' },
-    { key: 'downloads', label: 'Yêu thích' }
+    { key: 'favorites', label: 'Yêu thích' }
   ]
 
   return (
@@ -55,49 +54,6 @@ function LibraryFilterTabs({
         </Pressable>
       ))}
     </ScrollView>
-  )
-}
-
-/** Hero card — Liked Songs */
-function LikedSongsHero({ count, onPress }: { count: number; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [pressed && { opacity: 0.9 }]}>
-      <LinearGradient
-        colors={['#6C5CE7', '#B026FF', '#872CA2']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.likedHero}
-      >
-        <View style={styles.likedHeroContent}>
-          <Heart size={28} color='#FFFFFF' fill='#FFFFFF' />
-          <View style={styles.likedHeroInfo}>
-            <Text style={styles.likedHeroTitle}>Bài hát đã thích</Text>
-            <Text style={styles.likedHeroCount}>{count} bài hát</Text>
-          </View>
-        </View>
-        <ChevronRight size={22} color='rgba(255,255,255,0.7)' />
-      </LinearGradient>
-    </Pressable>
-  )
-}
-
-/** Card danh sách nghe gần đây */
-function RecentlyPlayedEntry({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress}>
-      {({ pressed }) => (
-        <View style={[styles.recentEntry, pressed && { backgroundColor: 'rgba(255,255,255,0.03)' }]}>
-          <View style={styles.recentEntryIcon}>
-            <Clock size={22} color={COLORS.primary} />
-          </View>
-          <View style={styles.recentEntryInfo}>
-            <Text style={styles.recentEntryTitle}>Nghe gần đây</Text>
-            <Text style={styles.recentEntryDesc}>Lịch sử phát nhạc của bạn</Text>
-          </View>
-          <ChevronRight size={20} color={COLORS.textMuted} />
-        </View>
-      )}
-    </Pressable>
   )
 }
 
@@ -214,28 +170,18 @@ export default function LibraryScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header (Back, Title, Heart) */}
-        {/* Header */}
-        <View style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}>
+        <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
           <Text style={styles.headerTitleLeft}>Thư viện</Text>
-          <Pressable style={styles.iconButton} onPress={() => router.push('/playlist/create' as any)}>
-            <Plus size={20} color='#FFFFFF' />
-          </Pressable>
+          <View style={styles.headerRightAbsolute}>
+            <Pressable style={styles.iconButton} onPress={() => router.push('/playlist/create' as any)}>
+              <Plus size={20} color='#FFFFFF' />
+            </Pressable>
+          </View>
         </View>
 
         {/* Filter Tabs */}
         <LibraryFilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* Render nội dung theo Tab */}
-        {activeTab === 'playlists' && (
-          <View style={styles.listSection}>
-            <View style={styles.sectionContent}>
-              <PlaylistItem title="I'm Lovin' Myself" trackCount={12} onPress={() => {}} isSelected />
-              <PlaylistItem title='Workout Mix' trackCount={8} onPress={() => {}} />
-              <PlaylistItem title='Chill Night' trackCount={15} onPress={() => {}} />
-              <PlaylistItem title='Nhạc yêu thích' trackCount={tracks.length} onPress={() => {}} />
-            </View>
-          </View>
-        )}
 
         {activeTab === 'tracks' && tracks.length > 0 && (
           <View style={styles.listSection}>
@@ -260,8 +206,8 @@ export default function LibraryScreen() {
           />
         )}
 
-        {(activeTab === 'albums' || activeTab === 'downloads') && (
-          <EmptyState icon='folder-outline' title='Chưa có dữ liệu' description='Tính năng này đang được phát triển.' />
+        {(activeTab === 'albums' || activeTab === 'favorites') && (
+          <EmptyState icon='heart-outline' title='Chưa có dữ liệu' description='Tính năng này đang được phát triển.' />
         )}
 
         {/* Spacer cho TabBar và MiniPlayer */}
@@ -286,11 +232,16 @@ const styles = StyleSheet.create({
     height: 400
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    // Không dùng alignItems: 'center' kết hợp flexDirection: 'row' ở cấp ngoài cùng
+    // vì iconButton 44px sẽ tự động kéo giãn chiều cao row, đẩy text xuống giữa.
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md
+    paddingBottom: SPACING.md,
+    justifyContent: 'center' // Đảm bảo text được cố định
+  },
+  headerRightAbsolute: {
+    position: 'absolute',
+    right: SPACING.lg,
+    bottom: SPACING.md - 4 // Trừ hao nhẹ để icon nằm chính giữa text
   },
   iconButton: {
     width: 44,

@@ -1,9 +1,5 @@
-import { View, Text } from 'react-native'
+import TermsOfServiceScreen from '@shared/components/screens/TermsOfServiceScreen'
 
-export default function TermsOfServiceScreen() {
-  return (
-    <View className='flex-1 items-center justify-center bg-[#080316]'>
-      <Text className='text-white text-xl'>Điều khoản dịch vụ</Text>
-    </View>
-  )
+export default function Page() {
+  return <TermsOfServiceScreen />
 }

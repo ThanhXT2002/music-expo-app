@@ -4,15 +4,24 @@
  * @module app/(tabs)
  */
 
-import { View, ScrollView, Pressable, StyleSheet, Switch, Alert, Text } from 'react-native'
+import { View, ScrollView, Pressable, StyleSheet, Switch, Alert, Text, Dimensions, Image } from 'react-native'
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { User, Bell, Palette, Shield, LogOut, ChevronRight, Info } from 'lucide-react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { User, Bell, Palette, Shield, LogOut, ChevronRight, Info, HelpCircle, FileText, ShieldCheck } from 'lucide-react-native'
 import { COLORS } from '@shared/constants/colors'
-import { FONT_SIZE, SPACING } from '@shared/constants/spacing'
+import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing'
 import { useAuth } from '@features/auth/hooks/useAuth'
 import { GlassCard } from '@shared/components/GlassCard'
+
+const MOOD_BEAT_COLORS = {
+  primary: '#6C5CE7',
+  secondary: '#A29BFE',
+  accent: '#00D2FF',
+  textSecondary: 'rgba(255,255,255,0.7)',
+  disabled: 'rgba(255,255,255,0.4)',
+}
 
 // ─── Settings Section Component ───────────────────────────────────────────────
 
@@ -35,12 +44,12 @@ function SettingItem({
     <Pressable onPress={onPress} disabled={!onPress}>
       {({ pressed }) => (
         <View style={[styles.settingItem, pressed && onPress && styles.settingItemPressed]}>
-          <View style={[styles.iconWrapper, danger && { backgroundColor: 'rgba(255, 65, 91, 0.1)' }]}>{icon}</View>
+          <View style={[styles.iconWrapper, danger && { backgroundColor: 'rgba(255, 65, 91, 0.15)' }]}>{icon}</View>
           <View style={styles.itemTextContent}>
             <Text style={[styles.itemTitle, danger && { color: COLORS.error }]}>{title}</Text>
             {subtitle && <Text style={styles.itemSubtitle}>{subtitle}</Text>}
           </View>
-          {rightElement ? rightElement : onPress && <ChevronRight size={20} color={COLORS.textMuted} />}
+          {rightElement ? rightElement : onPress && <ChevronRight size={20} color={MOOD_BEAT_COLORS.disabled} />}
         </View>
       )}
     </Pressable>
@@ -70,8 +79,16 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Cực tím Gradient background ở top - Mood Beat Style */}
+      <LinearGradient
+        colors={['rgba(108, 92, 231, 0.3)', 'transparent']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={styles.ambientTopGlow}
+      />
+
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
         <Text style={styles.headerTitle}>Cài đặt</Text>
       </View>
 
@@ -83,9 +100,18 @@ export default function SettingsScreen() {
         {user && (
           <GlassCard style={styles.profileCardWrapper}>
             <View style={styles.profileCard}>
-              <View style={styles.avatarPlaceholder}>
-                <Text style={styles.avatarText}>{user.name ? user.name[0].toUpperCase() : 'U'}</Text>
-              </View>
+              <LinearGradient
+                colors={[MOOD_BEAT_COLORS.primary, MOOD_BEAT_COLORS.accent]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.avatarPlaceholder}
+              >
+                {user.profile_picture ? (
+                  <Image source={{ uri: user.profile_picture }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarText}>{user.name ? user.name[0].toUpperCase() : 'U'}</Text>
+                )}
+              </LinearGradient>
               <View style={styles.profileInfo}>
                 <Text style={styles.profileName}>{user.name}</Text>
                 <Text style={styles.profileEmail}>{user.email}</Text>
@@ -100,15 +126,15 @@ export default function SettingsScreen() {
           <GlassCard style={styles.sectionCardWrapper}>
             <View style={styles.sectionContent}>
               <SettingItem
-                icon={<User size={20} color={COLORS.primary} />}
+                icon={<User size={20} color={MOOD_BEAT_COLORS.primary} />}
                 title='Thông tin cá nhân'
                 subtitle='Tên, Email, Sinh trắc học'
-                onPress={() => {}}
+                onPress={() => router.push('/settings/profile')}
               />
               <SettingItem
-                icon={<Shield size={20} color={COLORS.success} />}
+                icon={<Shield size={20} color={MOOD_BEAT_COLORS.accent} />}
                 title='Quyền riêng tư'
-                onPress={() => {}}
+                onPress={() => router.push('/settings/privacy-settings')}
               />
             </View>
           </GlassCard>
@@ -119,15 +145,15 @@ export default function SettingsScreen() {
           <GlassCard style={styles.sectionCardWrapper}>
             <View style={styles.sectionContent}>
               <SettingItem
-                icon={<Bell size={20} color={COLORS.warning} />}
+                icon={<Bell size={20} color={MOOD_BEAT_COLORS.secondary} />}
                 title='Thông báo'
-                rightElement={<Switch value={true} trackColor={{ true: COLORS.primary, false: COLORS.border }} />}
+                rightElement={<Switch value={true} trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }} thumbColor={"#FFFFFF"} />}
               />
               <SettingItem
-                icon={<Palette size={20} color={COLORS.info} />}
+                icon={<Palette size={20} color={MOOD_BEAT_COLORS.primary} />}
                 title='Chủ đề & Hiển thị'
-                subtitle='Ban đêm (Mặc định)'
-                onPress={() => {}}
+                subtitle='Dark Mode - Mood Beat'
+                onPress={() => router.push('/settings/theme')}
               />
             </View>
           </GlassCard>
@@ -138,10 +164,25 @@ export default function SettingsScreen() {
           <GlassCard style={styles.sectionCardWrapper}>
             <View style={styles.sectionContent}>
               <SettingItem
-                icon={<Info size={20} color={COLORS.textSecondary} />}
+                icon={<HelpCircle size={20} color={MOOD_BEAT_COLORS.accent} />}
+                title='Trợ giúp & Hỗ trợ'
+                onPress={() => router.push('/settings/help')}
+              />
+              <SettingItem
+                icon={<FileText size={20} color={MOOD_BEAT_COLORS.textSecondary} />}
+                title='Điều khoản sử dụng'
+                onPress={() => router.push('/terms-of-service')}
+              />
+              <SettingItem
+                icon={<ShieldCheck size={20} color={MOOD_BEAT_COLORS.accent} />}
+                title='Chính sách bảo mật'
+                onPress={() => router.push('/privacy-policy')}
+              />
+              <SettingItem
+                icon={<Info size={20} color={MOOD_BEAT_COLORS.textSecondary} />}
                 title='Thông tin ứng dụng'
                 subtitle='Phiên bản 1.0.0'
-                onPress={() => {}}
+                onPress={() => router.push('/settings/app-info')}
               />
               <SettingItem
                 icon={<LogOut size={20} color={COLORS.error} />}
@@ -162,74 +203,77 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: '#0F0C29' // Dark Base theo Mood Beat Style
+  },
+  ambientTopGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 350
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md
+    paddingBottom: SPACING.md,
+    gap: SPACING.sm
   },
   scrollContent: {
-    paddingHorizontal: SPACING.lg
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg // Tách nhỏ để không quá sát xuống header
   },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: '#FFFFFF'
   },
 
   // Profile Card
   profileCardWrapper: {
     padding: 0,
-    marginBottom: 32
+    marginBottom: SPACING['2xl'], // 24px (Section spacing)
+    borderRadius: RADIUS.xl, // Border radius: 16px - 24px
   },
   profileCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16
+    padding: SPACING.lg // Padding 16px
   },
-  avatarPlaceholder: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold'
-  },
+  avatarPlaceholder: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginRight: SPACING.lg, shadowColor: MOOD_BEAT_COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+  avatarImage: { width: '100%', height: '100%', borderRadius: 32 },
+  avatarText: { fontSize: 24, fontWeight: '800', color: '#FFFFFF' },
   profileInfo: {
     flex: 1
   },
   profileName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
+    fontSize: 18, // Subtitle: 18px Medium
+    fontWeight: '500', // Medium
+    color: '#FFFFFF',
     marginBottom: 4,
     textTransform: 'capitalize'
   },
   profileEmail: {
-    fontSize: 14,
-    color: COLORS.textMuted
+    fontSize: 14, // Body: 14px Regular
+    color: 'rgba(255,255,255,0.7)' // Secondary Text
   },
 
   // Sections
   section: {
-    marginBottom: 28
+    marginBottom: SPACING['2xl'], // Section spacing: 24px
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.textMuted,
-    marginBottom: 12,
+    fontSize: 12, // Caption: 12px Light
+    fontWeight: '300', // Light
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: SPACING.md, // Card gap: 12px (hoặc tương tự cho title => card)
     marginLeft: 4,
-    letterSpacing: 1
+    letterSpacing: 1.2,
+    textTransform: 'uppercase'
   },
   sectionCardWrapper: {
-    padding: 0
+    padding: 0,
+    borderRadius: RADIUS.xl // 20px
   },
   sectionContent: {
     // GlassCard handles background and borders, so we just remove these
@@ -240,18 +284,18 @@ const styles = StyleSheet.create({
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: SPACING.lg, // Padding: 16px
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.03)'
+    borderBottomColor: 'rgba(255,255,255,0.05)' // Subtle separator
   },
   settingItemPressed: {
-    backgroundColor: 'rgba(255,255,255,0.05)'
+    backgroundColor: 'rgba(255,255,255,0.08)' // Glass effect bump
   },
   iconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    width: 42,
+    height: 42,
+    borderRadius: RADIUS.full, // 12px
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14
@@ -261,13 +305,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.textPrimary
+    fontSize: 14, // Body: 14px Regular
+    fontWeight: '400',
+    color: '#FFFFFF'
   },
   itemSubtitle: {
-    fontSize: 13,
-    color: COLORS.textMuted,
+    fontSize: 12, // Caption: 12px
+    color: 'rgba(255,255,255,0.7)', // Secondary text
     marginTop: 2
   }
 })

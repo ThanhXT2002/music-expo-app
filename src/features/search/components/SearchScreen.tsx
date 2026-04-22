@@ -175,7 +175,7 @@ export default function SearchScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}>
+      <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
         <Text style={styles.headerTitle}>Tìm kiếm</Text>
       </View>
 

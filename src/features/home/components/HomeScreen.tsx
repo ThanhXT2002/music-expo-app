@@ -42,7 +42,7 @@ function HomeHeader() {
   const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
 
   return (
-    <View style={[styles.header, { paddingTop: insets.top + SPACING.lg }]}>
+    <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
       <View style={styles.headerLeft}>
         <Text style={styles.greeting}>{greeting}</Text>
         <Text style={styles.userName}>{user?.name ?? 'Nghe nhạc vui vẻ!'}</Text>
@@ -332,7 +332,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     marginTop: 2,
-    letterSpacing: 0.5
+    letterSpacing: 0.5,
+    textTransform: 'capitalize'
   },
   headerRight: {
     flexDirection: 'row',

@@ -1,88 +1,97 @@
 /**
- * @file TermsOfServiceScreen.tsx
- * @description Trang Điều khoản dịch vụ — nội dung giống web, style dark mode.
- * @module features/auth
+ * @file PrivacyPolicyScreen.tsx
+ * @description Trang Chính sách bảo mật — nội dung giống web, style dark mode.
+ * @module shared/components/screens
  */
 
 import { View, ScrollView, Pressable, StyleSheet, Linking, Text } from 'react-native'
+import { BlurView } from 'expo-blur'
 
 import { useRouter } from 'expo-router'
 import { COLORS } from '@shared/constants/colors'
 import { AuthBackground } from '@shared/components/ui/AuthBackground'
-import { ArrowLeft, ScrollText, Copyright, ShieldCheck, Power, Mail, Lightbulb } from 'lucide-react-native'
+import { ArrowLeft, Database, Target, ShieldCheck, Lock, Clock, Lightbulb, Mail } from 'lucide-react-native'
 
 const CARDS = [
   {
-    icon: ScrollText,
-    title: 'Quy định sử dụng',
+    icon: Database,
+    title: 'Thông tin thu thập',
     color: '#6B3FA0',
     bg: '#1C1235',
     items: [
-      'Chỉ sử dụng ứng dụng cho mục đích cá nhân, không thương mại',
-      'Không sử dụng ứng dụng cho các hành vi vi phạm pháp luật',
-      'Không tải lên hoặc chia sẻ nội dung vi phạm bản quyền'
+      'Email, tài khoản Google (chỉ dùng cho xác thực và cá nhân hóa trải nghiệm)',
+      'Lịch sử nghe nhạc, playlist, bài hát yêu thích (lưu trữ cục bộ, không chia sẻ ra ngoài)',
+      'Thông tin thiết bị (chỉ dùng để cải thiện bảo mật và hiệu năng)'
     ]
   },
   {
-    icon: Copyright,
-    title: 'Quyền sở hữu trí tuệ',
+    icon: Target,
+    title: 'Mục đích sử dụng',
     color: '#0EA5E9',
     bg: '#0C1A2A',
-    text: 'Toàn bộ mã nguồn, logo, giao diện thuộc sở hữu của tác giả Tran Xuan Thanh. Không được sao chép, chỉnh sửa, phân phối khi chưa có sự đồng ý.'
+    items: [
+      'Cá nhân hóa trải nghiệm nghe nhạc',
+      'Cải thiện tính năng, bảo mật ứng dụng',
+      'Không sử dụng cho quảng cáo, không bán dữ liệu'
+    ]
   },
   {
     icon: ShieldCheck,
-    title: 'Giới hạn trách nhiệm',
+    title: 'Quyền của người dùng',
     color: '#64748B',
     bg: '#151B28',
-    text: 'XTMusic cung cấp "nguyên trạng" (as is), không chịu trách nhiệm với bất kỳ thiệt hại nào phát sinh từ việc sử dụng ứng dụng.'
-  },
-  {
-    icon: Power,
-    title: 'Thay đổi & chấm dứt dịch vụ',
-    color: '#3B82F6',
-    bg: '#111827',
-    text: 'Chúng tôi có thể thay đổi hoặc ngừng cung cấp dịch vụ bất cứ lúc nào mà không cần báo trước.'
-  },
-  {
-    icon: Mail,
-    title: 'Liên hệ',
-    color: '#A855F7',
-    bg: '#1A1040',
-    text: 'Mọi thắc mắc, khiếu nại vui lòng liên hệ:',
+    items: ['Yêu cầu truy cập, chỉnh sửa hoặc xóa dữ liệu cá nhân', 'Rút lại quyền truy cập bất cứ lúc nào'],
     extra: 'tranxuanthanhtxt2002@gmail.com'
   },
   {
+    icon: Lock,
+    title: 'Bảo mật dữ liệu',
+    color: '#3B82F6',
+    bg: '#111827',
+    text: 'Chúng tôi áp dụng các biện pháp bảo mật tiêu chuẩn. Tuy nhiên, không có phương thức nào an toàn tuyệt đối.'
+  },
+  {
+    icon: Clock,
+    title: 'Thay đổi chính sách',
+    color: '#A855F7',
+    bg: '#1A1040',
+    text: 'Chính sách này có thể được cập nhật. Mọi thay đổi sẽ được thông báo trên trang này.'
+  },
+  {
     icon: Lightbulb,
-    title: 'Lưu ý sử dụng',
+    title: 'Lưu ý bảo mật',
     color: '#F59E42',
     bg: '#1F1810',
-    items: ['Đảm bảo cập nhật ứng dụng và trình duyệt thường xuyên để có trải nghiệm tốt nhất.']
+    items: [
+      'Không chia sẻ thông tin cá nhân hoặc tài khoản cho người khác.',
+      'Luôn kiểm tra quyền truy cập ứng dụng trên thiết bị của bạn.',
+      'Đọc kỹ các thông báo cập nhật về bảo mật từ XTMusic.'
+    ]
   }
 ]
 
-export default function TermsOfServiceScreen() {
+export default function PrivacyPolicyScreen() {
   const router = useRouter()
 
   return (
     <View style={styles.flex}>
-      <AuthBackground variant='register' />
+      <AuthBackground variant='login' />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()}>
-            <View style={styles.backBtn}>
+          <Pressable style={styles.backBtnWrapper} onPress={() => router.back()}>
+            <BlurView intensity={20} tint="dark" style={styles.backBtn}>
               <ArrowLeft size={22} color={COLORS.textPrimary} />
-            </View>
+            </BlurView>
           </Pressable>
-          <Text style={styles.headerTitle}>Điều khoản dịch vụ</Text>
+          <Text style={styles.headerTitle}>Chính sách bảo mật</Text>
           <View style={{ width: 44 }} />
         </View>
 
         <Text style={styles.updated}>Cập nhật lần cuối: 01/07/2025</Text>
         <Text style={styles.intro}>
-          Bằng việc sử dụng ứng dụng XTMusic, bạn đồng ý với các điều khoản dưới đây. Ứng dụng KHÔNG sử dụng cho mục
-          đích thương mại hoặc kiếm tiền từ bất kỳ cá nhân/tổ chức nào.
+          Ứng dụng XTMusic cam kết bảo vệ quyền riêng tư và dữ liệu cá nhân của người dùng. Ứng dụng KHÔNG sử dụng cho
+          mục đích thương mại hoặc kiếm tiền từ bất kỳ cá nhân/tổ chức nào.
         </Text>
 
         {/* Cards */}
@@ -105,11 +114,12 @@ export default function TermsOfServiceScreen() {
               {card.text && <Text style={styles.cardText}>{card.text}</Text>}
               {card.extra && (
                 <Pressable onPress={() => Linking.openURL(`mailto:${card.extra}`)}>
-                  <Text
-                    style={[styles.cardText, { color: COLORS.primary, textDecorationLine: 'underline', marginTop: 6 }]}
-                  >
-                    {card.extra}
-                  </Text>
+                  <View style={styles.bulletRow}>
+                    <Mail size={14} color={COLORS.primary} />
+                    <Text style={[styles.bulletText, { color: COLORS.primary, textDecorationLine: 'underline' }]}>
+                      {card.extra}
+                    </Text>
+                  </View>
                 </Pressable>
               )}
             </View>
@@ -133,13 +143,14 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 40 },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  backBtnWrapper: {
+    borderRadius: 22,
+    overflow: 'hidden'
+  },
   backBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1A1A2E',
-    borderWidth: 1.5,
-    borderColor: '#2E2848',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center'
   },
