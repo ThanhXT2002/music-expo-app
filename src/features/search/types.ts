@@ -7,6 +7,14 @@
 import type { Track, Album, Artist } from '@shared/types/track'
 
 /**
+ * Kết quả API thô trả về từ backend (Youtube Music)
+ */
+export interface RawYTMusicResult {
+  resultType: 'song' | 'video' | 'album' | 'artist' | 'playlist'
+  [key: string]: any
+}
+
+/**
  * Kết quả tìm kiếm tổng hợp từ API.
  */
 export interface SearchResult {

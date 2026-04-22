@@ -6,14 +6,21 @@
  */
 
 import { View, Pressable, StyleSheet, Text } from 'react-native'
-
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  cancelAnimation,
+  Easing as ReanimatedEasing
+} from 'react-native-reanimated'
 import { Image } from 'expo-image'
 import { MoreVertical } from 'lucide-react-native'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { formatDuration } from '@shared/utils/formatDuration'
 import type { Track } from '@shared/types/track'
-import React from 'react'
+import React, { useEffect } from 'react'
 
 interface TrackListItemProps {
   /** Thông tin bài hát */
@@ -25,7 +32,6 @@ interface TrackListItemProps {
   /** Callback khi nhấn vào track */
   onPress: (track: Track) => void
   /** Callback khi nhấn menu "..." */
-  /** Callback khi nhấn menu "..." */
   onMenuPress?: (track: Track) => void
   /** Track này đang active (đang phát) */
   isActive?: boolean
@@ -33,6 +39,53 @@ interface TrackListItemProps {
   rightIcon?: React.ReactNode
   /** Hiển thị thời lượng (mặc định true) */
   showDuration?: boolean
+}
+
+/** Component ảnh bìa xoay tròn chỉ render khi bài hát đang phát để tối ưu hiệu năng */
+function ActiveTrackCover({ uri }: { uri: string }) {
+  const rotation = useSharedValue(0)
+
+  useEffect(() => {
+    rotation.value = withRepeat(
+      withTiming(rotation.value + 360, {
+        duration: 6000,
+        easing: ReanimatedEasing.linear
+      }),
+      -1,
+      false
+    )
+
+    return () => {
+      cancelAnimation(rotation)
+    }
+  }, [rotation])
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const currentRotation = Number.isFinite(rotation.value) ? rotation.value : 0
+    return {
+      transform: [{ rotate: `${currentRotation}deg` }]
+    }
+  })
+
+  return (
+    <Animated.View style={[styles.coverWrapper, styles.coverWrapperActive, animatedStyle]}>
+      <Image source={{ uri }} style={styles.coverImage} contentFit='cover' transition={200} />
+    </Animated.View>
+  )
+}
+
+/** Component vỏ bọc quyết định render ảnh tĩnh hay ảnh động */
+function TrackCover({ uri, isActive }: { uri: string; isActive: boolean }) {
+  if (isActive) {
+    return <ActiveTrackCover uri={uri} />
+  }
+
+  // Trạng thái tĩnh (không play) -> Dùng View bình thường để tránh lỗi layout biến mất trên Android
+  return (
+    <View style={styles.coverWrapper}>
+      <Image source={{ uri }} style={styles.coverImage} contentFit='cover' transition={200} />
+    </View>
+  )
 }
 
 /**
@@ -54,7 +107,7 @@ export function TrackListItem({
         <View style={[styles.container, pressed && styles.pressed, isActive && styles.active]}>
           {/* Số thứ tự hoặc ảnh bìa */}
           {showCover ? (
-            <Image source={{ uri: track.coverUrl }} style={styles.cover} contentFit='cover' transition={200} />
+            <TrackCover uri={track.coverUrl} isActive={isActive} />
           ) : (
             <View style={styles.indexContainer}>
               <Text style={[styles.indexText, isActive && { color: COLORS.primary }]}>{index ?? '—'}</Text>
@@ -66,29 +119,28 @@ export function TrackListItem({
             <Text style={[styles.title, isActive && { color: COLORS.primary }]} numberOfLines={1}>
               {track.title}
             </Text>
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {track.artist}
-            </Text>
+            {/* Artist + Duration cùng hàng, căn 2 đầu */}
+            <View style={styles.subtitleRow}>
+              <Text style={styles.subtitle} numberOfLines={1}>
+                {track.artist}
+              </Text>
+              {showDuration && track.durationSeconds > 0 && (
+                <Text style={styles.duration}>{formatDuration(track.durationSeconds)}</Text>
+              )}
+            </View>
           </View>
 
-          {/* Thời lượng */}
-          <View style={styles.rightContent}>
-            {showDuration && <Text style={styles.duration}>{formatDuration(track.durationSeconds)}</Text>}
-
-            {/* Menu button */}
-            {onMenuPress && (
-              <Pressable
-                onPress={(e) => {
-                  e.stopPropagation()
-                  onMenuPress(track)
-                }}
-                hitSlop={12}
-                style={styles.menuButton}
-              >
-                {rightIcon || <MoreVertical size={18} color={COLORS.textMuted} />}
-              </Pressable>
-            )}
-          </View>
+          {/* Menu button — luôn hiển thị */}
+          <Pressable
+            onPress={(e) => {
+              e.stopPropagation()
+              onMenuPress?.(track)
+            }}
+            hitSlop={12}
+            style={styles.menuButton}
+          >
+            {rightIcon || <MoreVertical size={18} color={COLORS.textMuted} />}
+          </Pressable>
         </View>
       )}
     </Pressable>
@@ -99,18 +151,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.full,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.12)',
     backgroundColor: 'rgba(20, 15, 45, 0.7)',
-    shadowColor: '#B026FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 3,
     marginBottom: SPACING.sm,
-    marginHorizontal: SPACING.lg
+    marginHorizontal: SPACING.lg,
+    gap: SPACING.md
   },
   pressed: {
     backgroundColor: 'rgba(176, 38, 255, 0.12)',
@@ -120,10 +169,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(176, 38, 255, 0.2)',
     borderColor: 'rgba(176, 38, 255, 0.5)'
   },
-  cover: {
+  coverWrapper: {
     width: 48,
     height: 48,
-    borderRadius: RADIUS.full // Tròn giống pill
+    borderRadius: RADIUS.full, // Bắt buộc bo tròn toàn bộ để quay không bị méo
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: 'transparent' // Luôn giữ border để tránh lỗi biến mất View trên Android khi toggle isActive
+  },
+  coverWrapperActive: {
+    borderColor: '#1DB954' // Chuyển màu viền khi active
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: RADIUS.full
   },
   indexContainer: {
     width: 48,
@@ -141,26 +201,28 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
     justifyContent: 'center',
-    marginLeft: SPACING.md
+    gap: 4
   },
   title: {
     fontSize: FONT_SIZE.md,
     fontWeight: '700',
     color: '#FFFFFF'
   },
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
   subtitle: {
     fontSize: FONT_SIZE.xs,
     color: '#A0A0A0',
-    marginTop: 2
-  },
-  rightContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm
+    flex: 1,
+    marginRight: SPACING.sm
   },
   duration: {
     fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted
+    color: COLORS.textMuted,
+    fontWeight: '500'
   },
   menuButton: {
     padding: SPACING.xs

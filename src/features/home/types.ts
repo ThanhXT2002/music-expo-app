@@ -54,4 +54,6 @@ export interface RecommendedPlaylist {
   coverUrl: string
   /** Số lượng bài hát */
   trackCount: number
+  /** Danh sách bài hát trong playlist */
+  tracks: Track[]
 }

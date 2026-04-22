@@ -10,9 +10,10 @@ import { View, Pressable, StyleSheet, Text } from 'react-native'
 import { Image } from 'expo-image'
 import { useRouter } from 'expo-router'
 import { BlurView } from 'expo-blur'
-import { Play, Pause, SkipForward } from 'lucide-react-native'
+import { Play, Pause, SkipForward, ListMusic } from 'lucide-react-native'
 import { usePlayerStore } from '../store/playerStore'
 import { usePlayer } from '../hooks/usePlayer'
+import { CurrentPlaylistSheet } from './CurrentPlaylistSheet'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 
@@ -21,8 +22,8 @@ import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
  * Glass effect background, progress bar mỏng phía trên.
  */
 export function MiniPlayer() {
-  const { currentTrack } = usePlayerStore()
-  const { isPlaying, progress, play, pause } = usePlayer()
+  const { currentTrack, openCurrentPlaylist } = usePlayerStore()
+  const { isPlaying, progress, play, pause, next } = usePlayer()
   const router = useRouter()
 
   if (!currentTrack) return null
@@ -33,43 +34,53 @@ export function MiniPlayer() {
   }
 
   return (
-    <Pressable onPress={() => router.push(`/player/${currentTrack.id}`)} style={styles.container}>
-      {/* Glass background */}
-      <BlurView intensity={30} tint='dark' style={StyleSheet.absoluteFillObject} />
-      <View style={[StyleSheet.absoluteFillObject, styles.glassOverlay]} />
+    <>
+      <Pressable onPress={() => router.push(`/player/${currentTrack.id}`)} style={styles.container}>
+        {/* Glass background */}
+        <BlurView intensity={30} tint='dark' style={StyleSheet.absoluteFillObject} />
+        <View style={[StyleSheet.absoluteFillObject, styles.glassOverlay]} />
 
-      {/* Progress bar mỏng phía trên */}
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: `${(progress ?? 0) * 100}%` }]} />
-      </View>
-
-      <View style={styles.content}>
-        {/* Cover */}
-        <Image source={{ uri: currentTrack.coverUrl }} style={styles.cover} contentFit='cover' transition={200} />
-
-        {/* Song info */}
-        <View style={styles.info}>
-          <Text style={styles.title} numberOfLines={1}>
-            {currentTrack.title}
-          </Text>
-          <Text style={styles.artist} numberOfLines={1}>
-            {currentTrack.artist}
-          </Text>
+        {/* Progress bar mỏng phía trên */}
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${(progress ?? 0) * 100}%` }]} />
         </View>
 
-        {/* Controls */}
-        <Pressable onPress={handlePlayPause} style={styles.controlBtn} hitSlop={12}>
-          {isPlaying ? (
-            <Pause size={22} color={COLORS.textPrimary} fill={COLORS.textPrimary} />
-          ) : (
-            <Play size={22} color={COLORS.textPrimary} fill={COLORS.textPrimary} />
-          )}
-        </Pressable>
-        <Pressable style={styles.controlBtn} hitSlop={12}>
-          <SkipForward size={20} color={COLORS.textMuted} fill={COLORS.textMuted} />
-        </Pressable>
-      </View>
-    </Pressable>
+        <View style={styles.content}>
+          {/* Cover */}
+          <Image source={{ uri: currentTrack.coverUrl }} style={styles.cover} contentFit='cover' transition={200} />
+
+          {/* Song info */}
+          <View style={styles.info}>
+            <Text style={styles.title} numberOfLines={1}>
+              {currentTrack.title}
+            </Text>
+            <Text style={styles.artist} numberOfLines={1}>
+              {currentTrack.artist}
+            </Text>
+          </View>
+
+          {/* Controls */}
+          <Pressable onPress={handlePlayPause} style={styles.controlBtn} hitSlop={12}>
+            {isPlaying ? (
+              <Pause size={22} color={COLORS.textPrimary} fill={COLORS.textPrimary} />
+            ) : (
+              <Play size={22} color={COLORS.textPrimary} fill={COLORS.textPrimary} />
+            )}
+          </Pressable>
+          
+          <Pressable onPress={next} style={styles.controlBtn} hitSlop={12}>
+            <SkipForward size={20} color={COLORS.textMuted} fill={COLORS.textMuted} />
+          </Pressable>
+
+          <Pressable onPress={openCurrentPlaylist} style={styles.controlBtn} hitSlop={12}>
+            <ListMusic size={20} color={COLORS.textMuted} />
+          </Pressable>
+        </View>
+      </Pressable>
+
+      {/* Đặt CurrentPlaylistSheet ở ngoài Pressable để Modal có thể đè lên toàn bộ app */}
+      <CurrentPlaylistSheet />
+    </>
   )
 }
 

@@ -44,7 +44,9 @@ import {
 } from 'lucide-react-native'
 import { createLogger } from '@core/logger'
 import { usePlayer } from '../hooks/usePlayer'
+import { usePlayerStore } from '../store/playerStore'
 import { ProgressBar } from './ProgressBar'
+import { CurrentPlaylistSheet } from './CurrentPlaylistSheet'
 import { useDownloadStore } from '@features/downloads/store/downloadStore'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
@@ -165,7 +167,11 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
           <Text style={styles.headerLabel}>ĐANG NGHE</Text>
           <Text style={styles.headerSublabel}>_ ___ _</Text>
         </View>
-        <Pressable style={styles.headerBtn} hitSlop={12}>
+        <Pressable
+          style={styles.headerBtn}
+          hitSlop={12}
+          onPress={() => usePlayerStore.getState().openCurrentPlaylist()}
+        >
           <Menu size={24} color={COLORS.textSecondary} />
         </Pressable>
       </View>
@@ -253,6 +259,9 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
           <Text style={styles.bottomBtnText}>Hàng đợi</Text>
         </Pressable> */}
       </View>
+
+      {/* ── Current Playlist Sheet ── */}
+      <CurrentPlaylistSheet />
     </View>
   )
 }

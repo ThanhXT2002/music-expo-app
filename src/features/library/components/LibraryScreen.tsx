@@ -189,6 +189,7 @@ export default function LibraryScreen() {
               <TrackListItem
                 key={track.id}
                 track={track}
+                isActive={playerStore.currentTrack?.id === track.id}
                 onPress={() => handlePlayTrack(track)}
                 onMenuPress={() => {
                   removeTrack(track.id)

@@ -421,6 +421,7 @@ export default function DownloadsScreen() {
                 <TrackListItem
                   key={track.id}
                   track={track}
+                  isActive={playerStore.currentTrack?.id === track.id}
                   onPress={() => handlePlayOffline(song)}
                   showDuration={false}
                   rightIcon={<Trash2 size={16} color='#A0A0A0' />}

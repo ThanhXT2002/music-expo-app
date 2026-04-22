@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@core/api/apiClient'
 import { API_ENDPOINTS } from '@core/api/endpoints'
 import { createLogger } from '@core/logger'
+import { mapYtSongToTrack } from '@shared/utils/trackMapper'
 import type { HomeFeed, FeaturedItem, RecommendedPlaylist } from '../types'
 import type { Track } from '@shared/types/track'
 
@@ -30,7 +31,7 @@ function mapTracksToFeed(tracks: Track[]): HomeFeed {
     targetId: t.id
   }))
 
-  // Top songs: lấy 6 bài tiếp theo
+  // Top songs: lấy 10 bài đầu
   const recentlyPlayed = tracks.slice(0, 10)
 
   // Playlist giả: nhóm theo nghệ sĩ
@@ -46,7 +47,8 @@ function mapTracksToFeed(tracks: Track[]): HomeFeed {
       title: `${artist} Mix`,
       description: `Tuyển tập ${artist}`,
       coverUrl: artistTracks[0]?.coverUrl || `https://picsum.photos/seed/playlist${i}/300/300`,
-      trackCount: artistTracks.length
+      trackCount: artistTracks.length,
+      tracks: artistTracks
     }))
 
   return {
@@ -76,19 +78,8 @@ export function useHome() {
 
       // Kiểm tra nếu rawData là array (flat tracks) thì map sang HomeFeed
       if (Array.isArray(rawData)) {
-        const tracks: Track[] = rawData.map((item: any) => ({
-          id: item.videoId || item.id || String(Math.random()),
-          title: item.title || 'Unknown',
-          artist: item.artists?.[0]?.name || item.artist || 'Unknown',
-          artistId: item.artists?.[0]?.id || '',
-          album: item.album?.name || item.album || '',
-          durationSeconds: item.duration_seconds || 0,
-          coverUrl:
-            item.thumbnails?.[item.thumbnails.length - 1]?.url ||
-            item.coverUrl ||
-            item.thumbnail ||
-            `https://picsum.photos/seed/${item.videoId}/300/300`
-        }))
+        // Dùng mapYtSongToTrack() để có đầy đủ streamUrl, albumId, etc.
+        const tracks: Track[] = rawData.map((item: any) => mapYtSongToTrack(item))
         return mapTracksToFeed(tracks)
       }
 
@@ -110,3 +101,4 @@ export function useHome() {
     refetch: query.refetch
   }
 }
+

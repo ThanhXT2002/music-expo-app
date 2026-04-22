@@ -5,19 +5,22 @@
  * @module features/search
  */
 
-import { View, ScrollView, Pressable, FlatList, ActivityIndicator, StyleSheet, Text, TextInput } from 'react-native'
-
+import { View, ScrollView, Pressable, FlatList, ActivityIndicator, StyleSheet, Text, TextInput, Keyboard } from 'react-native'
 import { useState, useCallback } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
+import { BlurView } from 'expo-blur'
 import { Search, Mic, X, TrendingUp } from 'lucide-react-native'
-import { useSearch } from '../hooks/useSearch'
+import { useSearchFull, useSearchSuggestions } from '../hooks/useSearch'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, LAYOUT } from '@shared/constants/spacing'
 import { SectionHeader } from '@shared/components/SectionHeader'
 import { TrackListItem } from '@shared/components/TrackListItem'
+import { HorizontalCardList } from '@shared/components/HorizontalCardList'
+import { usePlayerStore } from '@features/player/store/playerStore'
+import * as AudioManager from '@core/audio/AudioManager'
 import type { Track, Album, Artist } from '@shared/types/track'
 import type { SearchTab } from '../types'
 
@@ -44,11 +47,17 @@ const GENRES: { id: string; label: string; colors: [string, string] }[] = [
 function SearchInput({
   value,
   onChangeText,
-  onClear
+  onClear,
+  onFocus,
+  onBlur,
+  onSubmitEditing
 }: {
   value: string
   onChangeText: (text: string) => void
   onClear: () => void
+  onFocus?: () => void
+  onBlur?: () => void
+  onSubmitEditing?: () => void
 }) {
   return (
     <View style={styles.searchBarContainer}>
@@ -57,6 +66,9 @@ function SearchInput({
         <TextInput
           value={value}
           onChangeText={onChangeText}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onSubmitEditing={onSubmitEditing}
           placeholder='Bài hát, nghệ sĩ, album...'
           placeholderTextColor={COLORS.textMuted}
           style={styles.searchInput}
@@ -64,14 +76,47 @@ function SearchInput({
           returnKeyType='search'
         />
         {value.length > 0 && (
-          <Pressable onPress={onClear} hitSlop={8}>
+          <Pressable onPress={onClear} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
             <X size={18} color={COLORS.textMuted} />
           </Pressable>
         )}
       </View>
-      <Pressable style={styles.micButton} hitSlop={8}>
-        <Mic size={20} color={COLORS.primary} />
-      </Pressable>
+    </View>
+  )
+}
+
+/** Dropdown gợi ý tìm kiếm */
+function AutoSuggestDropdown({
+  suggestions,
+  onSelect,
+  isFetching
+}: {
+  suggestions: string[]
+  onSelect: (item: string) => void
+  isFetching: boolean
+}) {
+  if (suggestions.length === 0 && !isFetching) return null
+
+  return (
+    <View style={styles.dropdownContainer}>
+      {isFetching && suggestions.length === 0 ? (
+        <View style={styles.dropdownLoading}>
+          <ActivityIndicator size='small' color={COLORS.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={suggestions.slice(0, 8)} // Hiển thị tối đa 8 gợi ý
+          keyExtractor={(item, index) => `${item}-${index}`}
+          keyboardShouldPersistTaps='handled'
+          keyboardDismissMode='on-drag'
+          renderItem={({ item }) => (
+            <Pressable style={styles.suggestionItem} onPress={() => onSelect(item)}>
+              <Search size={16} color={COLORS.textMuted} />
+              <Text style={styles.suggestionText} numberOfLines={1}>{item}</Text>
+            </Pressable>
+          )}
+        />
+      )}
     </View>
   )
 }
@@ -128,30 +173,15 @@ function FilterTabs({ activeTab, onTabChange }: { activeTab: SearchTab; onTabCha
 }
 
 /** Album card nhỏ trong kết quả */
-function AlbumResultCard({ album, onPress }: { album: Album; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.albumCard, pressed && { opacity: 0.8 }]}>
-      <Image source={{ uri: album.coverUrl }} style={styles.albumImage} contentFit='cover' transition={200} />
-      <Text style={styles.albumTitle} numberOfLines={1}>
-        {album.title}
-      </Text>
-      <Text style={styles.albumArtist} numberOfLines={1}>
-        {album.artist}
-      </Text>
-    </Pressable>
-  )
-}
+
 
 /** Artist card nhỏ trong kết quả */
 function ArtistResultCard({ artist, onPress }: { artist: Artist; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.artistCard, pressed && { opacity: 0.8 }]}>
       <Image source={{ uri: artist.avatarUrl }} style={styles.artistAvatar} contentFit='cover' transition={200} />
-      <Text style={styles.artistName} numberOfLines={1}>
+      <Text style={styles.artistName} numberOfLines={1} ellipsizeMode='tail'>
         {artist.name}
-      </Text>
-      <Text style={styles.artistFollowers} numberOfLines={1}>
-        Nghệ sĩ
       </Text>
     </Pressable>
   )
@@ -165,12 +195,57 @@ function ArtistResultCard({ artist, onPress }: { artist: Artist; onPress: () => 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
-  const { query, setQuery, results, isSearching, hasResults } = useSearch()
+
+  const [query, setQuery] = useState('')
+  const [isInputFocused, setIsInputFocused] = useState(false)
   const [activeTab, setActiveTab] = useState<SearchTab>('all')
 
-  const handleClear = useCallback(() => setQuery(''), [setQuery])
-  const handleGenreSelect = useCallback((genre: string) => setQuery(genre), [setQuery])
-  const handleTrackPress = useCallback((track: Track) => router.push(`/player/${track.id}`), [router])
+  const { results, isSearching, hasResults } = useSearchFull(query)
+  const { suggestions, isFetchingSuggestions } = useSearchSuggestions(query)
+
+  const handleClear = useCallback(() => {
+    setQuery('')
+  }, [])
+
+  const handleSuggestionSelect = useCallback((text: string) => {
+    setQuery(text)
+    setIsInputFocused(false)
+    Keyboard.dismiss()
+  }, [])
+
+  const handleGenreSelect = useCallback((genre: string) => {
+    setQuery(genre)
+    setIsInputFocused(false)
+    Keyboard.dismiss()
+  }, [])
+
+  const handleTrackPress = useCallback(async (track: Track) => {
+    try {
+      const store = usePlayerStore.getState()
+      // Thêm bài vào Queue nếu chưa có
+      if (!store.queue.some(t => t.id === track.id)) {
+        store.addToQueue(track)
+      }
+
+      // Set track hiện tại
+      store.setCurrentTrack(track)
+
+      if (!track.streamUrl) {
+        console.error('Track thiếu streamUrl:', track)
+        return
+      }
+
+      // Gọi AudioManager stream nhạc từ Backend Proxy Pipeline
+      await AudioManager.loadAndPlay(track as Track & { streamUrl: string })
+
+      // Chuyển hướng sang màn hình Now Playing
+      router.push(`/player/${track.id}`)
+    } catch (error) {
+      console.error('Lỗi phát nhạc:', error)
+    }
+  }, [router])
+
+  const showDropdown = isInputFocused && query.length >= 2
 
   return (
     <View style={styles.container}>
@@ -180,12 +255,31 @@ export default function SearchScreen() {
       </View>
 
       {/* Search Bar */}
-      <SearchInput value={query} onChangeText={setQuery} onClear={handleClear} />
+      <SearchInput
+        value={query}
+        onChangeText={setQuery}
+        onClear={handleClear}
+        onFocus={() => setIsInputFocused(true)}
+        onSubmitEditing={() => {
+          setIsInputFocused(false)
+          Keyboard.dismiss()
+        }}
+        // Không dùng onBlur để tránh click list suggestion bị miss event
+      />
+
+      {/* Auto-Suggest Dropdown */}
+      {showDropdown && (
+        <AutoSuggestDropdown
+          suggestions={suggestions}
+          onSelect={handleSuggestionSelect}
+          isFetching={isFetchingSuggestions}
+        />
+      )}
 
       {/* Content */}
       {!query ? (
         // Chưa search → Genre grid
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <GenreGrid onSelect={handleGenreSelect} />
           <View style={{ height: LAYOUT.tabBarOffset }} />
         </ScrollView>
@@ -197,7 +291,15 @@ export default function SearchScreen() {
         </View>
       ) : hasResults && results ? (
         // Có kết quả
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onScrollBeginDrag={() => {
+            Keyboard.dismiss();
+            setIsInputFocused(false);
+          }}
+        >
           <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Bài hát */}
@@ -214,19 +316,17 @@ export default function SearchScreen() {
           {(activeTab === 'all' || activeTab === 'albums') && results.albums.length > 0 && (
             <View style={styles.resultSection}>
               {activeTab === 'all' && <SectionHeader title='Album' />}
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalResults}
-              >
-                {results.albums.map((album) => (
-                  <AlbumResultCard
-                    key={album.id}
-                    album={album}
-                    onPress={() => router.push(`/album/${album.id}` as any)}
-                  />
-                ))}
-              </ScrollView>
+              <HorizontalCardList
+                items={results.albums.map((album) => ({
+                  id: album.id,
+                  imageUrl: album.coverUrl,
+                  title: album.title,
+                  subtitle: album.artist,
+                }))}
+                size='sm'
+                showPlayButton={false}
+                onPress={(item) => router.push(`/album/${item.id}` as any)}
+              />
             </View>
           )}
 
@@ -288,7 +388,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
     gap: SPACING.sm,
-    marginBottom: SPACING.lg
+    marginBottom: SPACING.lg,
+    zIndex: 101, // Phải cao hơn dropdown để dropdown đè dưới
   },
   searchBar: {
     flex: 1,
@@ -312,11 +413,48 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: 'rgba(176, 38, 255, 0.12)',
+    backgroundColor: 'rgba(108, 92, 231, 0.12)', // Dùng mã RGB của COLORS.primary (#6C5CE7)
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(176, 38, 255, 0.2)'
+    borderColor: 'rgba(108, 92, 231, 0.2)'
+  },
+
+  // Dropdown
+  dropdownContainer: {
+    position: 'absolute',
+    top: 110, // Ước lượng vị trí dưới SearchBar (tùy safe area)
+    left: SPACING.lg,
+    right: SPACING.lg, // Căn lề phải bằng với SearchBar
+    backgroundColor: COLORS.surface, // Màu nền đặc không dùng Blur
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    maxHeight: 250,
+    zIndex: 100,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  dropdownLoading: {
+    padding: SPACING.lg,
+    alignItems: 'center'
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+    gap: SPACING.sm
+  },
+  suggestionText: {
+    fontSize: FONT_SIZE.md,
+    color: COLORS.textPrimary,
+    flex: 1
   },
 
   // Genre Grid
@@ -384,31 +522,14 @@ const styles = StyleSheet.create({
     gap: SPACING.md
   },
 
-  // Album Card
-  albumCard: {
-    width: 130
-  },
-  albumImage: {
-    width: 130,
-    height: 130,
-    borderRadius: RADIUS.md,
-    marginBottom: SPACING.sm
-  },
-  albumTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: '600',
-    color: COLORS.textPrimary
-  },
-  albumArtist: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    marginTop: 2
-  },
+
 
   // Artist Card
   artistCard: {
     width: 110,
-    alignItems: 'center'
+    maxWidth: 110,
+    alignItems: 'center',
+    overflow: 'hidden'
   },
   artistAvatar: {
     width: 100,
@@ -420,12 +541,15 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.sm,
     fontWeight: '600',
     color: COLORS.textPrimary,
-    textAlign: 'center'
+    textAlign: 'center',
+    width: 110,
   },
   artistFollowers: {
     fontSize: FONT_SIZE.xs,
     color: COLORS.textMuted,
-    marginTop: 2
+    marginTop: 2,
+    width: 110,
+    textAlign: 'center',
   },
 
   // Loading
@@ -433,7 +557,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: SPACING.md
+    gap: SPACING.md,
+    marginTop: 100
   },
   loadingText: {
     fontSize: FONT_SIZE.md,
@@ -446,7 +571,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: SPACING.md,
-    paddingBottom: 100
+    marginTop: 100
   },
   emptyTitle: {
     fontSize: FONT_SIZE.xl,

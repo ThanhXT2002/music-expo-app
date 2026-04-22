@@ -1,37 +1,87 @@
 /**
  * @file HomeScreen.tsx
  * @description Màn hình trang chủ — Khám phá nhạc.
- * Hiển thị featured banner, top songs, nghe gần đây, playlist gợi ý, nghệ sĩ.
+ * Hiển thị featured banner, top songs, nghe nhiều nhất, playlist gợi ý.
  *
  * Thiết kế theo phong cách Mood Beat: dark neon, purple glow, glassmorphism.
  * @module features/home
  */
 
-import { View, ScrollView, RefreshControl, Pressable, Dimensions, StyleSheet, Text } from 'react-native'
-
-import { useState, useCallback } from 'react'
+import {
+  View,
+  ScrollView,
+  RefreshControl,
+  Pressable,
+  Dimensions,
+  StyleSheet,
+  Text,
+  ActivityIndicator
+} from 'react-native'
+import { useState, useCallback, useRef } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Bell, Mic } from 'lucide-react-native'
+import { Bell, Play, ChevronRight, TrendingUp, Clock, Music2 } from 'lucide-react-native'
+
 import { createLogger } from '@core/logger'
 import { useHome } from '../hooks/useHome'
 import { useAuthStore } from '@features/auth/store/authStore'
+import { usePlayerStore } from '@features/player/store/playerStore'
+import * as AudioManager from '@core/audio/AudioManager'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, SHADOWS, LAYOUT } from '@shared/constants/spacing'
 import { SectionHeader } from '@shared/components/SectionHeader'
-import { PlayButton } from '@shared/components/PlayButton'
-import { formatDuration } from '@shared/utils/formatDuration'
+import { TrackListItem } from '@shared/components/TrackListItem'
+import { HorizontalCardList } from '@shared/components/HorizontalCardList'
+import { MusicBannerCarousel } from './MusicBannerCarousel'
 import type { Track } from '@shared/types/track'
 import type { FeaturedItem, RecommendedPlaylist } from '../types'
 
 const logger = createLogger('home-screen')
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
-const BANNER_WIDTH = SCREEN_WIDTH - 32
-const CARD_WIDTH = 150
+const BANNER_WIDTH = SCREEN_WIDTH - SPACING.lg * 2
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+
+// ─── Utility ─────────────────────────────────────────────────────────────────
+
+/** Hook phát nhạc dùng chung cho toàn màn hình Home */
+function usePlayTrack() {
+  const router = useRouter()
+  const store = usePlayerStore.getState()
+
+  return useCallback(
+    async (track: Track, contextTracks?: Track[]) => {
+      // Cập nhật toàn bộ queue nếu có truyền context (danh sách bài hát ngữ cảnh)
+      if (contextTracks && contextTracks.length > 0) {
+        store.setQueue(contextTracks)
+      } else {
+        if (!store.queue.some((t) => t.id === track.id)) {
+          store.addToQueue(track)
+        }
+      }
+      
+      store.setCurrentTrack(track)
+
+      if (!track.streamUrl) {
+        logger.warn('Track chưa có streamUrl — vẫn navigate để stream online', { trackId: track.id })
+        router.push(`/player/${track.id}`)
+        return
+      }
+
+      try {
+        await AudioManager.loadAndPlay(track as Track & { streamUrl: string })
+        router.push(`/player/${track.id}`)
+      } catch (err) {
+        logger.error('Lỗi phát nhạc từ Home', { err })
+        router.push(`/player/${track.id}`)
+      }
+    },
+    [router]
+  )
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 /** Header với lời chào + username + avatar */
 function HomeHeader() {
@@ -39,19 +89,21 @@ function HomeHeader() {
   const user = useAuthStore((s) => s.user)
 
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối'
+  const greeting = hour < 12 ? 'Chào buổi sáng ☀️' : hour < 18 ? 'Chào buổi chiều 🌤️' : 'Chào buổi tối 🌙'
 
   return (
     <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
       <View style={styles.headerLeft}>
         <Text style={styles.greeting}>{greeting}</Text>
-        <Text style={styles.userName}>{user?.name ?? 'Nghe nhạc vui vẻ!'}</Text>
+        <Text style={styles.userName} numberOfLines={1}>
+          {user?.name ?? 'Nghe nhạc vui vẻ!'}
+        </Text>
       </View>
       <View style={styles.headerRight}>
-        <View style={styles.bellBtn}>
-          <Bell size={20} color='#FFFFFF' />
+        <Pressable style={styles.bellBtn} hitSlop={10}>
+          <Bell size={20} color={COLORS.textSecondary} />
           <View style={styles.bellDot} />
-        </View>
+        </Pressable>
         <Image
           source={{ uri: user?.profile_picture || 'https://i.pravatar.cc/150?img=47' }}
           style={styles.avatar}
@@ -62,182 +114,120 @@ function HomeHeader() {
   )
 }
 
-/** Categories Pills */
-function HomeCategories() {
-  const tabs = ['Tất cả', 'Thịnh hành', 'Yêu thích', 'Ngẫu nhiên']
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
-      {tabs.map((tab, idx) => (
-        <Pressable key={tab} style={[styles.filterTab, idx === 0 && styles.filterTabActive]}>
-          <Text style={[styles.filterTabText, idx === 0 && styles.filterTabTextActive]}>{tab}</Text>
-        </Pressable>
-      ))}
-    </ScrollView>
+/** Skeleton loading placeholder */
+function HomeSkeleton() {
+  const pulse = (width: number, height: number, radius: number = RADIUS.md) => (
+    <View style={[styles.skeleton, { width, height, borderRadius: radius }]} />
   )
-}
-
-/** Banner nổi bật — carousel cuộn ngang */
-function FeaturedBannerSection({ items }: { items: FeaturedItem[] }) {
-  const router = useRouter()
-
-  if (!items || items.length === 0) return null
-
-  const handlePress = (item: FeaturedItem) => {
-    if (item.type === 'track') router.push(`/player/${item.targetId}`)
-    else if (item.type === 'playlist') router.push(`/playlist/${item.targetId}`)
-  }
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      pagingEnabled
-      snapToInterval={BANNER_WIDTH + SPACING.md}
-      decelerationRate='fast'
-      contentContainerStyle={styles.bannerScroll}
-      style={styles.bannerContainer}
-    >
-      {items.map((item, index) => (
-        <Pressable key={item.id} onPress={() => handlePress(item)} style={styles.bannerCard}>
-          <LinearGradient
-            colors={index % 2 === 0 ? ['#E3A8FF', '#A374FF'] : ['#4AC29A', '#BDFFF3']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFillObject}
-          />
-          <View style={styles.bannerContent}>
-            <View style={styles.bannerTextContent}>
-              <Text style={styles.bannerTitle} numberOfLines={2}>
-                {item.title}
-              </Text>
-              <Text style={styles.bannerSubtitle} numberOfLines={2}>
-                {item.subtitle}
-              </Text>
-              <View style={styles.bannerPlayBtn}>
-                <PlayButton size='md' onPress={() => handlePress(item)} />
-              </View>
-            </View>
-            <View style={styles.bannerImageWrapper}>
-              <Image source={{ uri: item.imageUrl }} style={styles.bannerImage} contentFit='cover' />
-            </View>
+    <View style={{ paddingHorizontal: SPACING.lg, gap: SPACING.lg, marginTop: SPACING.lg }}>
+      {/* Banner skeleton */}
+      {pulse(BANNER_WIDTH, 200, RADIUS.xl)}
+
+      {/* Section title */}
+      {pulse(140, 18, RADIUS.sm)}
+
+      {/* Track list skeleton */}
+      {[1, 2, 3, 4].map((i) => (
+        <View key={i} style={{ flexDirection: 'row', gap: SPACING.md, alignItems: 'center' }}>
+          {pulse(52, 52, RADIUS.full)}
+          <View style={{ gap: 6 }}>
+            {pulse(160, 14, RADIUS.sm)}
+            {pulse(100, 11, RADIUS.sm)}
           </View>
-        </Pressable>
+        </View>
       ))}
-    </ScrollView>
+    </View>
   )
 }
 
-/** Top Songs — Grid 2 cột cards ngang */
-function TopSongsSection({ tracks }: { tracks: Track[] }) {
-  const router = useRouter()
+
+
+/** Top Songs — List dùng TrackListItem */
+function TopSongsSection({ tracks, onPress }: { tracks: Track[]; onPress: (track: Track, contextTracks?: Track[]) => void }) {
+  const currentTrackId = usePlayerStore((s) => s.currentTrack?.id)
 
   if (!tracks || tracks.length === 0) return null
 
-  // Chỉ lấy 6 bài đầu cho grid
-  const displayTracks = tracks.slice(0, 6)
+  const displayTracks = tracks.slice(0, 8)
 
   return (
     <View style={styles.sectionContainer}>
       <SectionHeader title='Thịnh hành hôm nay' />
-      <View style={styles.topSongsGrid}>
-        {displayTracks.map((track) => (
-          <Pressable key={`top-${track.id}`} onPress={() => router.push(`/player/${track.id}`)}>
-            {({ pressed }) => (
-              <View style={[styles.topSongCard, pressed && styles.cardPressed]}>
-                <Image
-                  source={{ uri: track.coverUrl }}
-                  style={styles.topSongImage}
-                  contentFit='cover'
-                  transition={200}
-                />
-                <View style={styles.topSongInfo}>
-                  <Text style={styles.topSongTitle} numberOfLines={1}>
-                    {track.title}
-                  </Text>
-                  <Text style={styles.topSongArtist} numberOfLines={1}>
-                    {track.artist}
-                  </Text>
-                </View>
-              </View>
-            )}
-          </Pressable>
+      <View>
+        {displayTracks.map((track, idx) => (
+          <TrackListItem
+            key={`top-${track.id}-${idx}`}
+            track={track}
+            index={idx + 1}
+            showCover
+            showDuration
+            isActive={currentTrackId === track.id}
+            onPress={() => onPress(track, displayTracks)}
+            onMenuPress={undefined}
+          />
         ))}
       </View>
     </View>
   )
 }
 
-/** Nghe gần đây — Horizontal scroll cards (Most Popular style) */
-function RecentlyPlayedSection({ tracks }: { tracks: Track[] }) {
-  const router = useRouter()
-
+/** Nghe nhiều nhất — Horizontal scroll cards */
+function MostPlayedSection({ tracks, onPress }: { tracks: Track[]; onPress: (track: Track, contextTracks?: Track[]) => void }) {
   if (!tracks || tracks.length === 0) return null
+
+  const displayTracks = tracks.slice(3, 13)
 
   return (
     <View style={styles.sectionContainer}>
       <SectionHeader title='Nghe nhiều nhất' />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
-        {tracks.map((track) => (
-          <Pressable
-            key={track.id}
-            onPress={() => router.push(`/player/${track.id}`)}
-            style={({ pressed }) => [styles.popularCard, pressed && { opacity: 0.8 }]}
-          >
-            <View style={styles.popularImageWrapper}>
-              <Image source={{ uri: track.coverUrl }} style={styles.popularImage} contentFit='cover' transition={200} />
-              <LinearGradient colors={['transparent', 'rgba(0, 0, 0, 0.7)']} style={styles.popularImageOverlay} />
-              <View style={styles.popularTextOverlay}>
-                <Text style={styles.popularTitle} numberOfLines={1}>
-                  {track.title}
-                </Text>
-                <Text style={styles.popularArtist} numberOfLines={1}>
-                  {track.artist}
-                </Text>
-              </View>
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <HorizontalCardList
+        items={displayTracks.map((t) => ({
+          id: t.id,
+          imageUrl: t.coverUrl,
+          title: t.title,
+          subtitle: t.artist,
+        }))}
+        size='md'
+        actionVariant='inline'
+        showGradientOverlay
+        imageAspectRatio={1.125}
+        onPress={(item) => {
+          const track = displayTracks.find((t) => t.id === item.id)
+          if (track) onPress(track, displayTracks)
+        }}
+      />
     </View>
   )
 }
 
-/** Playlist gợi ý — Vertical List (Top Daily Playlists style) */
-function RecommendedPlaylistSection({ playlists }: { playlists: RecommendedPlaylist[] }) {
-  const router = useRouter()
-
+/** Playlist gợi ý — Horizontal scroll cards */
+function RecommendedSection({
+  playlists,
+  onPress
+}: {
+  playlists: RecommendedPlaylist[]
+  onPress: (pl: RecommendedPlaylist) => void
+}) {
   if (!playlists || playlists.length === 0) return null
 
   return (
     <View style={styles.sectionContainer}>
-      <SectionHeader title='Dành cho bạn' actionText='See all' onSeeAll={() => {}} />
-      <View style={styles.verticalList}>
-        {playlists.map((pl) => (
-          <Pressable key={pl.id} onPress={() => router.push(`/playlist/${pl.id}`)}>
-            {({ pressed }) => (
-              <View style={[styles.verticalListItem, pressed && styles.verticalListItemPressed]}>
-                <Image
-                  source={{ uri: pl.coverUrl }}
-                  style={styles.verticalListImage}
-                  contentFit='cover'
-                  transition={200}
-                />
-                <View style={styles.verticalListInfo}>
-                  <Text style={styles.verticalListTitle} numberOfLines={1}>
-                    {pl.title}
-                  </Text>
-                  <Text style={styles.verticalListDesc} numberOfLines={1}>
-                    Bởi MoodBeat • {pl.trackCount} bài hát
-                  </Text>
-                </View>
-                <View style={styles.verticalListPlayBtn}>
-                  <PlayButton size='sm' onPress={() => router.push(`/playlist/${pl.id}`)} />
-                </View>
-              </View>
-            )}
-          </Pressable>
-        ))}
-      </View>
+      <SectionHeader title='Dành cho bạn' actionText='Xem tất cả' onSeeAll={() => {}} />
+      <HorizontalCardList
+        items={playlists.map((pl) => ({
+          id: pl.id,
+          imageUrl: pl.coverUrl,
+          title: pl.title,
+          subtitle: `${pl.trackCount} bài hát`,
+        }))}
+        size='md'
+        onPress={(item) => {
+          const pl = playlists.find((p) => p.id === item.id)
+          if (pl) onPress(pl)
+        }}
+      />
     </View>
   )
 }
@@ -245,12 +235,13 @@ function RecommendedPlaylistSection({ playlists }: { playlists: RecommendedPlayl
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 /**
- * Màn hình trang chủ của ứng dụng — Khám phá nhạc.
- * Hiển thị banner nổi bật, bài nghe gần đây, top songs và playlist gợi ý.
+ * Màn hình trang chủ — Khám phá nhạc.
  */
 export default function HomeScreen() {
-  const { feed, refetch } = useHome()
+  const { feed, isLoading, refetch } = useHome()
   const [refreshing, setRefreshing] = useState(false)
+  const router = useRouter()
+  const handlePlayTrack = usePlayTrack()
 
   const onRefresh = useCallback(async () => {
     logger.info('Người dùng kéo refresh trang chủ')
@@ -261,36 +252,73 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Ambient purple glow top */}
       <LinearGradient
-        colors={['rgba(176, 38, 255, 0.2)', 'transparent']}
-        start={{ x: 0.8, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={styles.ambientTopGlow}
+        colors={['rgba(176, 38, 255, 0.18)', 'transparent']}
+        start={{ x: 0.6, y: 0 }}
+        end={{ x: 0.4, y: 0.5 }}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents='none'
       />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
       >
         {/* Header */}
         <HomeHeader />
 
-        {/* Categories Tabs */}
-        <HomeCategories />
+        {isLoading ? (
+          <HomeSkeleton />
+        ) : (
+          <>
+            {/* Banner nổi bật */}
+            <MusicBannerCarousel
+              data={(feed?.featured ?? []).map((f) => ({
+                id: f.id,
+                title: f.title,
+                subtitle: f.subtitle,
+                imageUrl: f.imageUrl
+              }))}
+              onPress={(item) => {
+                const track = feed?.recentlyPlayed.find((t) => item.id.includes(t.id))
+                if (track) handlePlayTrack(track)
+              }}
+            />
 
-        {/* Banner nổi bật */}
-        <FeaturedBannerSection items={feed?.featured ?? []} />
+            {/* Top Songs */}
+            <TopSongsSection tracks={feed?.recentlyPlayed ?? []} onPress={handlePlayTrack} />
 
-        {/* Top Songs Grid */}
-        <TopSongsSection tracks={feed?.recentlyPlayed ?? []} />
+            {/* Nghe nhiều nhất */}
+            <MostPlayedSection tracks={feed?.recentlyPlayed ?? []} onPress={handlePlayTrack} />
 
-        {/* Nghe gần đây */}
-        <RecentlyPlayedSection tracks={feed?.recentlyPlayed ?? []} />
+            {/* Playlist gợi ý */}
+            <RecommendedSection
+              playlists={feed?.recommendedPlaylists ?? []}
+              onPress={(pl) => {
+                if (pl.tracks.length === 0) return
+                const store = usePlayerStore.getState()
+                // Thêm toàn bộ tracks vào queue
+                pl.tracks.forEach((t) => {
+                  if (!store.queue.some((q) => q.id === t.id)) {
+                    store.addToQueue(t)
+                  }
+                })
+                // Phát bài đầu tiên
+                handlePlayTrack(pl.tracks[0])
+              }}
+            />
+          </>
+        )}
 
-        {/* Playlist gợi ý */}
-        <RecommendedPlaylistSection playlists={feed?.recommendedPlaylists ?? []} />
-
-        {/* Bottom spacing cho tab bar và mini player */}
-        <View style={{ height: 180 }} />
+        <View style={{ height: LAYOUT.miniPlayerOffset }} />
       </ScrollView>
     </View>
   )
@@ -303,12 +331,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background
   },
-  ambientTopGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 400
+
+  // Skeleton
+  skeleton: {
+    backgroundColor: COLORS.surface,
+    opacity: 0.7
   },
 
   // Header
@@ -317,262 +344,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.md
+    paddingBottom: SPACING.lg
   },
   headerLeft: {
-    flex: 1
+    flex: 1,
+    marginRight: SPACING.md
   },
   greeting: {
     fontSize: FONT_SIZE.xs,
-    color: '#A0A0A0',
-    fontWeight: '600'
+    color: COLORS.textSecondary,
+    fontWeight: '500'
   },
   userName: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: COLORS.textPrimary,
     marginTop: 2,
-    letterSpacing: 0.5,
-    textTransform: 'capitalize'
+    letterSpacing: -0.3
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.lg
+    gap: SPACING.md
   },
   bellBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: COLORS.surface,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border
   },
   bellDot: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FF3B30'
+    top: 9,
+    right: 9,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: COLORS.error,
+    borderWidth: 1.5,
+    borderColor: COLORS.background
   },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.1)'
-  },
-
-  // Filter Tabs
-  tabsScroll: {
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.md
-  },
-  filterTab: {
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: 10,
-    borderRadius: RADIUS.full,
-    backgroundColor: 'rgba(255,255,255,0.08)'
-  },
-  filterTabActive: {
-    backgroundColor: '#FFFFFF'
-  },
-  filterTabText: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: '600',
-    color: '#A0A0A0'
-  },
-  filterTabTextActive: {
-    color: '#000000'
+    borderColor: COLORS.primary
   },
 
   // Section container
   sectionContainer: {
     marginTop: SPACING['2xl']
   },
-
-  // Banner (Discover Weekly style)
-  bannerContainer: {
-    marginTop: SPACING.lg
-  },
-  bannerScroll: {
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.md
-  },
-  bannerCard: {
-    width: BANNER_WIDTH,
-    height: 180,
-    borderRadius: RADIUS.xl,
-    overflow: 'hidden'
-  },
-  bannerContent: {
-    flex: 1,
-    flexDirection: 'row'
-  },
-  bannerTextContent: {
-    flex: 1,
-    padding: SPACING.lg,
-    justifyContent: 'center'
-  },
-  bannerTitle: {
-    fontSize: FONT_SIZE['2xl'],
-    fontWeight: '800',
-    color: '#111111',
-    lineHeight: 28
-  },
-  bannerSubtitle: {
-    fontSize: FONT_SIZE.sm,
-    color: '#333333',
-    fontWeight: '500',
-    marginVertical: SPACING.sm
-  },
-  bannerPlayBtn: {
-    marginTop: SPACING.sm,
-    alignSelf: 'flex-start'
-  },
-  bannerImageWrapper: {
-    width: 140,
-    height: '100%',
-    padding: SPACING.md,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end'
-  },
-  bannerImage: {
-    width: 120,
-    height: 120,
-    borderRadius: RADIUS.lg,
-    transform: [{ rotate: '5deg' }],
-    ...SHADOWS.card
-  },
-
-  // Top Songs Grid
-  topSongsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.sm
-  },
-  topSongCard: {
-    width: (SCREEN_WIDTH - SPACING.lg * 2 - SPACING.sm) / 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
-    height: 56
-  },
-  cardPressed: {
-    backgroundColor: 'rgba(255,255,255,0.08)'
-  },
-  topSongImage: {
-    width: 56,
-    height: 56
-  },
-  topSongInfo: {
-    flex: 1,
-    paddingHorizontal: SPACING.sm
-  },
-  topSongTitle: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: '600',
-    color: COLORS.textPrimary
-  },
-  topSongArtist: {
-    fontSize: FONT_SIZE.xs,
-    color: COLORS.textMuted,
-    marginTop: 2
-  },
-
-  // Horizontal Scroll
-  horizontalScroll: {
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.md
-  },
-
-  // Most Popular
-  popularCard: {
-    width: 160
-  },
-  popularImageWrapper: {
-    width: 160,
-    height: 180,
-    borderRadius: RADIUS.xl,
-    overflow: 'hidden'
-  },
-  popularImage: {
-    width: '100%',
-    height: '100%'
-  },
-  popularImageOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80
-  },
-  popularTextOverlay: {
-    position: 'absolute',
-    bottom: SPACING.md,
-    left: SPACING.md,
-    right: SPACING.md
-  },
-  popularTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#FFFFFF'
-  },
-  popularArtist: {
-    fontSize: FONT_SIZE.xs,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2
-  },
-
-  // Vertical List (Top Daily Playlists)
-  verticalList: {
-    paddingHorizontal: SPACING.lg,
-    gap: SPACING.md
-  },
-  verticalListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: SPACING.sm,
-    borderRadius: RADIUS.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)', // Sáng lên như Menu
-    backgroundColor: 'rgba(20, 15, 45, 0.8)', // Trùng tông màu Menu Pill
-    // Shadow giả lập Glow tím nhẹ
-    shadowColor: '#B026FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5
-  },
-  verticalListItemPressed: {
-    backgroundColor: 'rgba(176, 38, 255, 0.15)', // Nhấn vào thì loé bóng tím
-    transform: [{ scale: 0.98 }]
-  },
-  verticalListImage: {
-    width: 60,
-    height: 60,
-    borderRadius: RADIUS.full // Also round the image perfectly
-  },
-  verticalListInfo: {
-    flex: 1,
-    marginLeft: SPACING.md
-  },
-  verticalListTitle: {
-    fontSize: FONT_SIZE.md,
-    fontWeight: '700',
-    color: '#FFFFFF'
-  },
-  verticalListDesc: {
-    fontSize: FONT_SIZE.xs,
-    color: '#A0A0A0',
-    marginTop: 4
-  },
-  verticalListPlayBtn: {
-    marginLeft: SPACING.md
-  }
 })

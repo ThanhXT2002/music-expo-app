@@ -58,21 +58,59 @@ export async function setupAudioManager(): Promise<void> {
   }
 }
 
+/** Lock chống gọi loadAndPlay đồng thời — serialize tất cả lệnh load */
+let loadLock: Promise<void> = Promise.resolve()
+
+/** ID của lệnh load mới nhất — dùng để cancel lệnh cũ */
+let latestLoadId = 0
+
 /**
  * Load và phát một bài hát mới.
  * Tự động dừng bài đang phát trước khi chuyển bài.
+ * Có lock chống gọi đồng thời — chỉ lệnh cuối cùng được phát.
  *
  * @param track - Thông tin bài hát cần phát
  */
 export async function loadAndPlay(track: AudioTrack): Promise<void> {
-  logger.info('Load bài hát mới', { trackId: track.id, title: track.title })
+  const myLoadId = ++latestLoadId
+  logger.info('Load bài hát mới', { trackId: track.id, title: track.title, loadId: myLoadId })
+
+  // Chờ lệnh load trước đó xong (serialize)
+  const previousLock = loadLock
+  let resolve: () => void
+  loadLock = new Promise<void>((r) => { resolve = r })
+
+  try {
+    await previousLock
+  } catch {
+    // Bỏ qua lỗi từ lệnh trước
+  }
+
+  // Nếu đã có lệnh load mới hơn → hủy lệnh này
+  if (myLoadId !== latestLoadId) {
+    logger.debug('Load bị hủy — có lệnh mới hơn', { myLoadId, latestLoadId })
+    resolve!()
+    return
+  }
 
   try {
     // Giải phóng sound cũ nếu đang phát bài khác
     if (currentSound) {
       logger.debug('Giải phóng sound cũ trước khi load bài mới')
-      await currentSound.unloadAsync()
+      try {
+        await currentSound.stopAsync()
+        await currentSound.unloadAsync()
+      } catch {
+        // Sound có thể đã bị unload rồi
+      }
       currentSound = null
+    }
+
+    // Kiểm tra lần nữa sau khi unload (có thể có lệnh mới chen vào)
+    if (myLoadId !== latestLoadId) {
+      logger.debug('Load bị hủy sau unload — có lệnh mới hơn', { myLoadId })
+      resolve!()
+      return
     }
 
     // Reset progress cho bài mới
@@ -91,6 +129,14 @@ export async function loadAndPlay(track: AudioTrack): Promise<void> {
       onPlaybackStatusUpdate
     )
 
+    // Kiểm tra lần cuối — nếu đã có lệnh mới → unload sound vừa tạo
+    if (myLoadId !== latestLoadId) {
+      logger.debug('Load bị hủy sau createAsync — unload sound mới', { myLoadId })
+      await sound.unloadAsync()
+      resolve!()
+      return
+    }
+
     currentSound = sound
     currentTrack = track
     playbackState = 'playing'
@@ -98,10 +144,14 @@ export async function loadAndPlay(track: AudioTrack): Promise<void> {
 
     logger.info('Phát bài hát thành công', { trackId: track.id })
   } catch (error) {
-    playbackState = 'error'
-    notifyListeners()
+    if (myLoadId === latestLoadId) {
+      playbackState = 'error'
+      notifyListeners()
+    }
     logger.error('Không thể load hoặc phát bài hát', { trackId: track.id, error })
     throw error
+  } finally {
+    resolve!()
   }
 }
 
