@@ -141,7 +141,7 @@ export default function RegisterScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.logoRow}>
-          <AppLogo size={90} />
+           <AppLogo size={150} />
         </View>
         <Text style={styles.title}>Đăng ký</Text>
         <Text style={styles.subtitle}>Một tài khoản — vạn giai điệu không giới hạn ♫</Text>
@@ -209,11 +209,11 @@ export default function RegisterScreen() {
 
         <Text style={styles.terms}>
           Bằng cách đăng ký, bạn đồng ý với{' '}
-          <Text style={styles.termsLink} onPress={() => router.push('/auth/terms-of-service')}>
+          <Text style={styles.termsLink} onPress={() => router.navigate('/auth/terms-of-service')}>
             Điều khoản dịch vụ
           </Text>{' '}
           và{' '}
-          <Text style={styles.termsLink} onPress={() => router.push('/auth/privacy-policy')}>
+          <Text style={styles.termsLink} onPress={() => router.navigate('/auth/privacy-policy')}>
             Chính sách bảo mật
           </Text>
         </Text>
@@ -234,7 +234,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 56, paddingBottom: 40 },
-  logoRow: { alignItems: 'center', marginBottom: 16 },
+  logoRow: { alignItems: 'center' },
 
   title: {
     fontSize: 30,

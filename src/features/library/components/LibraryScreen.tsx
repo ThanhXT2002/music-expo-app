@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Plus, Heart, Clock, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react-native'
+import { useSafePush } from '@core/hooks/useSafePush'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePlayerStore } from '@features/player/store/playerStore'
 import * as AudioManager from '@core/audio/AudioManager'
@@ -123,7 +124,7 @@ function PlaylistItem({
  */
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets()
-  const router = useRouter()
+  const safePush = useSafePush()
   const { tracks, isLoading, removeTrack } = useLibrary()
   const playerStore = usePlayerStore()
   const [activeTab, setActiveTab] = useState<LibraryTab>('tracks')
@@ -132,10 +133,10 @@ export default function LibraryScreen() {
     async (track: Track) => {
       // Truy Cập Trang Player mà không restart nếu bấm trúng bài đang phát/pause
       if (playerStore.currentTrack?.id === track.id) {
-        if (!playerStore.isPlaying) {
+        safePush(`/player/${track.id}`)
+        if (AudioManager.getPlaybackState() === 'paused') {
           await AudioManager.play()
         }
-        router.push(`/player/${track.id}`)
         return
       }
 
@@ -153,9 +154,9 @@ export default function LibraryScreen() {
       })
 
       playerStore.setIsPlaying(true)
-      router.push(`/player/${track.id}`)
+      safePush(`/player/${track.id}`)
     },
-    [tracks, playerStore, router]
+    [tracks, playerStore, safePush]
   )
 
   return (
@@ -173,7 +174,7 @@ export default function LibraryScreen() {
         <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
           <Text style={styles.headerTitleLeft}>Thư viện</Text>
           <View style={styles.headerRightAbsolute}>
-            <Pressable style={styles.iconButton} onPress={() => router.push('/playlist/create' as any)}>
+            <Pressable style={styles.iconButton} onPress={() => safePush('/playlist/create' as any)}>
               <Plus size={20} color='#FFFFFF' />
             </Pressable>
           </View>

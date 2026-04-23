@@ -46,6 +46,7 @@ import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { EmptyState } from '@shared/components/EmptyState'
 import { TrackListItem } from '@shared/components/TrackListItem'
 import { useDownloads } from '@features/downloads/hooks/useDownloads'
+import { useSafePush } from '@core/hooks/useSafePush'
 import { usePlayerStore } from '@features/player/store/playerStore'
 import * as AudioManager from '@core/audio/AudioManager'
 import { createLogger } from '@core/logger'
@@ -233,7 +234,7 @@ function SearchResultItem({
 
 export default function DownloadsScreen() {
   const insets = useSafeAreaInsets()
-  const router = useRouter()
+  const safePush = useSafePush()
   const {
     searchQuery,
     setSearchQuery,
@@ -258,10 +259,10 @@ export default function DownloadsScreen() {
 
         if (playerStore.currentTrack?.id === song.id) {
           // Bài này đang phát / được chọn, tiếp tục play và trượt lên thui
-          if (!playerStore.isPlaying) {
+          safePush(`/player/${song.id}`)
+          if (AudioManager.getPlaybackState() === 'paused') {
             await AudioManager.play()
           }
-          router.push(`/player/${song.id}`)
           return
         }
 
@@ -308,13 +309,13 @@ export default function DownloadsScreen() {
         playerStore.setIsPlaying(true)
 
         // Navigate sang player screen
-        router.push(`/player/${song.id}`)
+        safePush(`/player/${song.id}`)
       } catch (error) {
         logger.error('Lỗi phát nhạc offline', error)
         Alert.alert('Lỗi', 'Không thể phát bài hát này. Vui lòng thử lại.')
       }
     },
-    [playerStore, router, offlineSongs]
+    [playerStore, safePush, offlineSongs]
   )
 
   /** Đọc clipboard và điền vào ô tìm kiếm */

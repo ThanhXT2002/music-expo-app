@@ -22,7 +22,9 @@ import {
   updateProfile,
   signInWithCredential,
   GoogleAuthProvider,
-  FacebookAuthProvider
+  FacebookAuthProvider,
+  fetchSignInMethodsForEmail,
+  linkWithCredential
 } from 'firebase/auth'
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import { LoginManager, AccessToken } from 'react-native-fbsdk-next'
@@ -164,12 +166,56 @@ export async function loginWithFacebook(): Promise<AuthSession> {
   // 3. Wrap vào Firebase Credential
   const credential = FacebookAuthProvider.credential(data.accessToken)
 
-  // 4. Xác nhận Đăng nhập với Firebase
-  const userCredential = await signInWithCredential(auth, credential)
+  try {
+    // 4. Xác nhận Đăng nhập với Firebase
+    const userCredential = await signInWithCredential(auth, credential)
 
-  // 5. Lấy Firebase Token mới
-  const firebaseToken = await userCredential.user.getIdToken(true)
+    // 5. Lấy Firebase Token mới
+    const firebaseToken = await userCredential.user.getIdToken(true)
 
-  // 6. Chuyển sang Backend Đồng bộ Data
-  return await syncTokenWithBackend(firebaseToken)
+    // 6. Chuyển sang Backend Đồng bộ Data
+    return await syncTokenWithBackend(firebaseToken)
+  } catch (error: any) {
+    if (error.code === 'auth/account-exists-with-different-credential') {
+      logger.warn('Tài khoản đã tồn tại với credential khác, bắt đầu quá trình gộp tài khoản.')
+      
+      const email = error.customData?.email
+      if (!email) {
+        throw new Error('Không thể xác định email để liên kết tài khoản.')
+      }
+
+      const methods = await fetchSignInMethodsForEmail(auth, email)
+      logger.info(`[DEBUG] Phương thức đăng nhập cho ${email}:`, methods)
+
+      if (methods.includes('google.com')) {
+        logger.info('Email đã được đăng ký bằng Google. Yêu cầu đăng nhập Google để gộp...')
+        
+        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true })
+        const googleResponse = await GoogleSignin.signIn()
+        
+        if (!googleResponse.data?.idToken) {
+          throw new Error('Không lấy được Google ID Token để gộp tài khoản.')
+        }
+
+        const googleCredential = GoogleAuthProvider.credential(googleResponse.data.idToken)
+        
+        // Đăng nhập bằng tài khoản Google gốc
+        const googleUserCredential = await signInWithCredential(auth, googleCredential)
+        
+        // Gộp Facebook credential vào tài khoản hiện tại
+        await linkWithCredential(googleUserCredential.user, credential)
+        logger.info('Gộp tài khoản Google và Facebook thành công!')
+
+        // Lấy lại token mới sau khi gộp và gửi cho Backend
+        const newFirebaseToken = await googleUserCredential.user.getIdToken(true)
+        return await syncTokenWithBackend(newFirebaseToken)
+      } else if (methods.includes('password')) {
+        throw new Error(`Email ${email} đã dùng Mật khẩu. Vui lòng đăng nhập bằng Email/Mật khẩu.`)
+      } else {
+        throw new Error(`Email ${email} đã được sử dụng bởi phương thức khác.`)
+      }
+    }
+
+    throw error
+  }
 }

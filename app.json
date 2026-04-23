@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "music-expo-app",
+    "name": "XTMusic",
     "slug": "music-expo-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
-    "backgroundColor": "#080316",
+    "icon": "./assets/images/icon.png",
+    "backgroundColor": "#010009",
     "scheme": "musicexpoapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#080316",
+        "backgroundColor": "#010009",
         "foregroundImage": "./assets/images/logo.png"
       },
       "edgeToEdgeEnabled": true,
@@ -31,7 +31,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo.png",
+      "favicon": "./assets/images/icon.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -42,12 +42,12 @@
           "image": "./assets/images/logo.png",
           "imageWidth": 280,
           "resizeMode": "contain",
-          "backgroundColor": "#080316",
+          "backgroundColor": "#010009",
           "dark": {
             "image": "./assets/images/logo.png",
             "imageWidth": 280,
             "resizeMode": "contain",
-            "backgroundColor": "#080316"
+            "backgroundColor": "#010009"
           }
         }
       ],

@@ -25,6 +25,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { Bell, Play, ChevronRight, TrendingUp, Clock, Music2 } from 'lucide-react-native'
 
 import { createLogger } from '@core/logger'
+import { useSafePush } from '@core/hooks/useSafePush'
 import { useHome } from '../hooks/useHome'
 import { useAuthStore } from '@features/auth/store/authStore'
 import { usePlayerStore } from '@features/player/store/playerStore'
@@ -47,11 +48,23 @@ const BANNER_WIDTH = SCREEN_WIDTH - SPACING.lg * 2
 
 /** Hook phát nhạc dùng chung cho toàn màn hình Home */
 function usePlayTrack() {
-  const router = useRouter()
+  const safePush = useSafePush()
   const store = usePlayerStore.getState()
 
   return useCallback(
     async (track: Track, contextTracks?: Track[]) => {
+      const store = usePlayerStore.getState()
+
+      // Nếu click vào đúng bài đang phát -> Chỉ mở Player, KHÔNG phát lại từ đầu
+      if (store.currentTrack?.id === track.id) {
+        safePush(`/player/${track.id}`)
+        // Nếu bài hát đang tạm dừng thì cho phát tiếp
+        if (AudioManager.getPlaybackState() === 'paused') {
+          AudioManager.play()
+        }
+        return
+      }
+
       // Cập nhật toàn bộ queue nếu có truyền context (danh sách bài hát ngữ cảnh)
       if (contextTracks && contextTracks.length > 0) {
         store.setQueue(contextTracks)
@@ -60,24 +73,24 @@ function usePlayTrack() {
           store.addToQueue(track)
         }
       }
-      
+
       store.setCurrentTrack(track)
 
       if (!track.streamUrl) {
         logger.warn('Track chưa có streamUrl — vẫn navigate để stream online', { trackId: track.id })
-        router.push(`/player/${track.id}`)
+        safePush(`/player/${track.id}`)
         return
       }
 
       try {
         await AudioManager.loadAndPlay(track as Track & { streamUrl: string })
-        router.push(`/player/${track.id}`)
+        safePush(`/player/${track.id}`)
       } catch (err) {
         logger.error('Lỗi phát nhạc từ Home', { err })
-        router.push(`/player/${track.id}`)
+        safePush(`/player/${track.id}`)
       }
     },
-    [router]
+    [safePush]
   )
 }
 
@@ -105,7 +118,13 @@ function HomeHeader() {
           <View style={styles.bellDot} />
         </Pressable>
         <Image
-          source={{ uri: user?.profile_picture || 'https://i.pravatar.cc/150?img=47' }}
+          source={
+            user?.profile_picture
+              ? { uri: user.profile_picture }
+              : (process.env.EXPO_PUBLIC_USER_DEFAULT_IMG && process.env.EXPO_PUBLIC_USER_DEFAULT_IMG.startsWith('http')
+                  ? { uri: process.env.EXPO_PUBLIC_USER_DEFAULT_IMG }
+                  : require('../../../../assets/images/user-default.png')) // Tạm dùng logo làm fallback nếu chưa có file user-default.png
+          }
           style={styles.avatar}
           contentFit='cover'
         />

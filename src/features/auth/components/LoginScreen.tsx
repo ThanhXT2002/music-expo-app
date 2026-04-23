@@ -113,7 +113,7 @@ export default function LoginScreen() {
       >
         {/* Logo */}
         <View style={styles.logoRow}>
-          <AppLogo size={110} />
+          <AppLogo size={150} />
         </View>
 
         <Text style={styles.title}>Đăng nhập</Text>
@@ -136,7 +136,7 @@ export default function LoginScreen() {
             icon={<Lock size={18} color={COLORS.textMuted} />}
           />
 
-          <Pressable style={styles.forgotRow} onPress={() => router.push('/auth/forgot-password')}>
+          <Pressable style={styles.forgotRow} onPress={() => router.navigate('/auth/forgot-password')}>
             <Text style={styles.forgotText}>Quên mật khẩu?</Text>
           </Pressable>
 
@@ -174,7 +174,7 @@ export default function LoginScreen() {
         {/* Register */}
         <View style={styles.registerRow}>
           <Text style={styles.registerText}>Chưa có tài khoản? </Text>
-          <Pressable onPress={() => router.push('/auth/register')}>
+          <Pressable onPress={() => router.navigate('/auth/register')}>
             <Text style={styles.registerLink}>Đăng ký ngay</Text>
           </Pressable>
         </View>
@@ -188,7 +188,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 60, paddingBottom: 40 },
-  logoRow: { alignItems: 'center', marginBottom: 20 },
+  logoRow: { alignItems: 'center' },
 
   title: {
     fontSize: 30,

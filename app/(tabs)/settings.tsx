@@ -106,11 +106,16 @@ export default function SettingsScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.avatarPlaceholder}
               >
-                {user.profile_picture ? (
-                  <Image source={{ uri: user.profile_picture }} style={styles.avatarImage} />
-                ) : (
-                  <Text style={styles.avatarText}>{user.name ? user.name[0].toUpperCase() : 'U'}</Text>
-                )}
+                <Image 
+                  source={
+                    user.profile_picture 
+                      ? { uri: user.profile_picture } 
+                      : (process.env.EXPO_PUBLIC_USER_DEFAULT_IMG && process.env.EXPO_PUBLIC_USER_DEFAULT_IMG.startsWith('http')
+                          ? { uri: process.env.EXPO_PUBLIC_USER_DEFAULT_IMG }
+                          : require('../../assets/images/user-default.png')) // Fallback ảnh local
+                  } 
+                  style={styles.avatarImage} 
+                />
               </LinearGradient>
               <View style={styles.profileInfo}>
                 <Text style={styles.profileName}>{user.name}</Text>
@@ -129,12 +134,12 @@ export default function SettingsScreen() {
                 icon={<User size={20} color={MOOD_BEAT_COLORS.primary} />}
                 title='Thông tin cá nhân'
                 subtitle='Tên, Email, Sinh trắc học'
-                onPress={() => router.push('/settings/profile')}
+                onPress={() => router.navigate('/settings/profile')}
               />
               <SettingItem
                 icon={<Shield size={20} color={MOOD_BEAT_COLORS.accent} />}
                 title='Quyền riêng tư'
-                onPress={() => router.push('/settings/privacy-settings')}
+                onPress={() => router.navigate('/settings/privacy-settings')}
               />
             </View>
           </GlassCard>
@@ -153,7 +158,7 @@ export default function SettingsScreen() {
                 icon={<Palette size={20} color={MOOD_BEAT_COLORS.primary} />}
                 title='Chủ đề & Hiển thị'
                 subtitle='Dark Mode - Mood Beat'
-                onPress={() => router.push('/settings/theme')}
+                onPress={() => router.navigate('/settings/theme')}
               />
             </View>
           </GlassCard>
@@ -166,23 +171,23 @@ export default function SettingsScreen() {
               <SettingItem
                 icon={<HelpCircle size={20} color={MOOD_BEAT_COLORS.accent} />}
                 title='Trợ giúp & Hỗ trợ'
-                onPress={() => router.push('/settings/help')}
+                onPress={() => router.navigate('/settings/help')}
               />
               <SettingItem
                 icon={<FileText size={20} color={MOOD_BEAT_COLORS.textSecondary} />}
                 title='Điều khoản sử dụng'
-                onPress={() => router.push('/terms-of-service')}
+                onPress={() => router.navigate('/terms-of-service')}
               />
               <SettingItem
                 icon={<ShieldCheck size={20} color={MOOD_BEAT_COLORS.accent} />}
                 title='Chính sách bảo mật'
-                onPress={() => router.push('/privacy-policy')}
+                onPress={() => router.navigate('/privacy-policy')}
               />
               <SettingItem
                 icon={<Info size={20} color={MOOD_BEAT_COLORS.textSecondary} />}
                 title='Thông tin ứng dụng'
                 subtitle='Phiên bản 1.0.0'
-                onPress={() => router.push('/settings/app-info')}
+                onPress={() => router.navigate('/settings/app-info')}
               />
               <SettingItem
                 icon={<LogOut size={20} color={COLORS.error} />}

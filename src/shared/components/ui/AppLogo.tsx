@@ -8,7 +8,10 @@
 import { Image, StyleSheet, View, ViewStyle } from 'react-native'
 
 /** Đường dẫn logo — import tĩnh để Metro bundler đóng gói */
-const LOGO_SOURCE = require('../../../../assets/images/logo.png')
+const LOGO_SOURCE = (process.env.EXPO_PUBLIC_LOGO_URL && process.env.EXPO_PUBLIC_LOGO_URL.startsWith('http'))
+  ? { uri: process.env.EXPO_PUBLIC_LOGO_URL }
+  : require('../../../../assets/images/logo.png') // fallback lỡ env lỗi hoặc truyền sai đường dẫn local
+
 
 interface AppLogoProps {
   /** Kích thước logo (width & height) */
@@ -27,13 +30,13 @@ interface AppLogoProps {
 export function AppLogo({ size = 80, style }: AppLogoProps) {
   return (
     <View style={[styles.container, style]}>
-      <Image 
-        source={LOGO_SOURCE} 
+      <Image
+        source={LOGO_SOURCE}
         style={[
           { width: size, height: size },
           style?.borderRadius !== undefined && { borderRadius: style.borderRadius }
-        ]} 
-        resizeMode='contain' 
+        ]}
+        resizeMode='contain'
       />
     </View>
   )

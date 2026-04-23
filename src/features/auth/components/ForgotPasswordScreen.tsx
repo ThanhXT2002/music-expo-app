@@ -46,7 +46,7 @@ export default function ForgotPasswordScreen() {
     setIsLoading(true)
     try {
       logger.info('Gửi OTP', { email })
-      router.push({ pathname: '/auth/verify-email', params: { email: email.trim(), flow: 'forgot-password' } })
+      router.navigate({ pathname: '/auth/verify-email', params: { email: email.trim(), flow: 'forgot-password' } })
     } catch {
       setError('Gửi OTP thất bại.')
     } finally {
@@ -70,7 +70,7 @@ export default function ForgotPasswordScreen() {
         </Pressable>
 
         <View style={styles.logoRow}>
-          <AppLogo size={90} />
+          <AppLogo size={150} />
         </View>
         <Text style={styles.title}>Quên mật khẩu</Text>
         <Text style={styles.subtitle}>Nhập email đã đăng ký để nhận mã khôi phục</Text>
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     marginBottom: 28
   },
 
-  logoRow: { alignItems: 'center', marginBottom: 24 },
+  logoRow: { alignItems: 'center' },
   title: {
     fontSize: 28,
     fontWeight: '800',

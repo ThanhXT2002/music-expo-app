@@ -45,7 +45,7 @@ export default function AppInfoScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.brandingBox}>
-          <AppLogo size={100} style={{ marginBottom: SPACING.lg, borderRadius: 50, overflow: 'hidden' }} />
+          <AppLogo size={150} style={{ marginBottom: SPACING.lg, borderRadius: 50, overflow: 'hidden' }} />
           <Text style={styles.appName}>
             <Text style={{ color: MOOD_BEAT_COLORS.primary }}>XT</Text>Music
           </Text>
