@@ -10,7 +10,7 @@
  * @module features/player/hooks
  */
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import * as AudioManager from '@core/audio/AudioManager'
 import { createLogger } from '@core/logger'
 import { usePlayerStore } from '../store/playerStore'
@@ -33,9 +33,14 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
   const [duration, setDuration] = useState(0)
   const [isBuffering, setIsBuffering] = useState(false)
 
+  const handledTrackEndRef = useRef<string | null>(null)
+
   const handleNextTrack = useCallback(async (manual = false) => {
     const s = usePlayerStore.getState()
     if (!s.currentTrack) return
+
+    // Đánh dấu đã xử lý hết bài cho track hiện tại (khi bấm next thủ công)
+    handledTrackEndRef.current = s.currentTrack.id
 
     // Nếu chế độ lặp bài 1 bài và không phải user bấm Next thủ công
     if (!manual && s.repeatMode === 'one') {
@@ -98,11 +103,10 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
 
       // Tự động chuyển bài khi kết thúc
       if (state === 'stopped' && progressData.progress > 0) {
-        logger.info('Bài hát kết thúc — kiểm tra queue')
-        // Tránh loop vô hạn nếu queue rỗng
-        const { queue, repeatMode } = usePlayerStore.getState()
-        if (queue.length > 0 || repeatMode === 'one') {
-          handleNextTrack()
+        const currentId = usePlayerStore.getState().currentTrack?.id
+        if (currentId && handledTrackEndRef.current !== currentId) {
+          handledTrackEndRef.current = currentId
+          handleNextTrack(false)
         }
       }
     })

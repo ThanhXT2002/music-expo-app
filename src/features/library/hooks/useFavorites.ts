@@ -13,6 +13,7 @@ import { createLogger } from '@core/logger'
 import type { Track } from '@shared/types/track'
 import { ToastAndroid } from 'react-native'
 import { getFavoriteIdsLocal, syncFavoritesLocal, toggleFavoriteLocal } from '@core/data/database'
+import { useDownloadStore } from '@features/downloads/store/downloadStore'
 
 const logger = createLogger('useFavorites')
 
@@ -87,9 +88,18 @@ export function useToggleFavorite() {
           await apiClient.post(API_ENDPOINTS.FAVORITES, { song_id: track.id })
         }
       } catch (error: any) {
-        // Nếu lỗi do mất mạng, ta coi như thành công trên local, background sync sẽ xử lý sau (hoặc kệ để lần sau user online tự sync)
-        if (error?.statusCode === 0 || error?.message?.includes('Network Error') || error?.message?.includes('Kết nối')) {
-          logger.warn('Mất mạng khi toggle favorite, đã lưu tạm vào local db')
+        // Kiểm tra xem bài hát đã được tải về máy chưa
+        const isOfflineTrack = useDownloadStore.getState().isDownloaded(track.id)
+
+        // Nếu lỗi do mất mạng hoặc bài hát offline bị server trả về 404 (do chưa cache trên backend)
+        // thì ta coi như thành công trên local, background sync sẽ xử lý sau
+        if (
+          error?.statusCode === 0 || 
+          error?.message?.includes('Network Error') || 
+          error?.message?.includes('Kết nối') ||
+          (error?.statusCode === 404 && isOfflineTrack)
+        ) {
+          logger.warn('Mất mạng hoặc bài hát offline chưa có trên server, đã ưu tiên lưu tạm vào local db')
           return { track, isCurrentlyFavorited, offline: true }
         }
         // Throw lỗi thật nếu backend trả về lỗi logic
@@ -138,3 +148,4 @@ export function useToggleFavorite() {
     }
   })
 }
+
