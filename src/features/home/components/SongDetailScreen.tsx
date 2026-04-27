@@ -178,7 +178,6 @@ export default function SongDetailScreen({ songId }: SongDetailScreenProps) {
               key={track.id}
               track={track}
               onPress={(t) => router.push(`/song/${t.id}` as any)}
-              onMenuPress={() => {}}
             />
           ))}
         </View>

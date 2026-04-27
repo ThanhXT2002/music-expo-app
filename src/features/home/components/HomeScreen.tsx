@@ -76,18 +76,13 @@ function usePlayTrack() {
 
       store.setCurrentTrack(track)
 
-      if (!track.streamUrl) {
-        logger.warn('Track chưa có streamUrl — vẫn navigate để stream online', { trackId: track.id })
-        safePush(`/player/${track.id}`)
-        return
-      }
+      // Navigate ngay → audio load ngầm phía sau
+      safePush(`/player/${track.id}`)
 
-      try {
-        await AudioManager.loadAndPlay(track as Track & { streamUrl: string })
-        safePush(`/player/${track.id}`)
-      } catch (err) {
-        logger.error('Lỗi phát nhạc từ Home', { err })
-        safePush(`/player/${track.id}`)
+      if (track.streamUrl) {
+        AudioManager.loadAndPlay(track as Track & { streamUrl: string }).catch((err) => {
+          logger.error('Lỗi phát nhạc từ Home', { err })
+        })
       }
     },
     [safePush]

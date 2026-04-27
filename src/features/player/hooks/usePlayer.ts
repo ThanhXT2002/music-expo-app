@@ -31,38 +31,8 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
   const [progress, setProgress] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
+  const [isBuffering, setIsBuffering] = useState(false)
 
-  // Đăng ký listener nhận cập nhật tiến trình từ AudioManager
-  useEffect(() => {
-    const unsubscribe = AudioManager.subscribe((state, progressData) => {
-      setProgress(progressData.progress)
-      setCurrentTime(progressData.currentTime)
-      setDuration(progressData.duration)
-
-      // Sync isPlaying từ AudioManager state (source of truth)
-      const isNowPlaying = state === 'playing'
-      const storeIsPlaying = usePlayerStore.getState().isPlaying
-      if (isNowPlaying !== storeIsPlaying) {
-        usePlayerStore.getState().setIsPlaying(isNowPlaying)
-      }
-
-      // Tự động chuyển bài khi kết thúc
-      if (state === 'stopped' && progressData.progress > 0) {
-        logger.info('Bài hát kết thúc — kiểm tra queue')
-        // Tránh loop vô hạn nếu queue rỗng
-        const { queue, repeatMode } = usePlayerStore.getState()
-        if (queue.length > 0 || repeatMode === 'one') {
-          handleNextTrack()
-        }
-      }
-    })
-
-    return () => unsubscribe()
-  }, [handleNextTrack])
-
-  // ─── Core Hook Playback Logic ──────────────────────────────────────────
-
-  // Định nghĩa riêng handleNextTrack để tái sử dụng trong effect mà không gây dependency cycle
   const handleNextTrack = useCallback(async (manual = false) => {
     const s = usePlayerStore.getState()
     if (!s.currentTrack) return
@@ -106,8 +76,41 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
 
     logger.info('Chuyển sang bài:', { title: nextTrack.title })
     s.setCurrentTrack(nextTrack)
-    await AudioManager.loadAndPlay(nextTrack)
+    await AudioManager.loadAndPlay(nextTrack as any)
   }, [])
+
+  // Đăng ký listener nhận cập nhật tiến trình từ AudioManager
+  useEffect(() => {
+    const unsubscribe = AudioManager.subscribe((state, progressData) => {
+      setProgress(progressData.progress)
+      setCurrentTime(progressData.currentTime)
+      setDuration(progressData.duration)
+
+      // Sync isPlaying từ AudioManager state (source of truth)
+      const isNowPlaying = state === 'playing'
+      const storeIsPlaying = usePlayerStore.getState().isPlaying
+      if (isNowPlaying !== storeIsPlaying) {
+        usePlayerStore.getState().setIsPlaying(isNowPlaying)
+      }
+
+      // Sync isBuffering — true khi AudioManager đang loading
+      setIsBuffering(state === 'loading')
+
+      // Tự động chuyển bài khi kết thúc
+      if (state === 'stopped' && progressData.progress > 0) {
+        logger.info('Bài hát kết thúc — kiểm tra queue')
+        // Tránh loop vô hạn nếu queue rỗng
+        const { queue, repeatMode } = usePlayerStore.getState()
+        if (queue.length > 0 || repeatMode === 'one') {
+          handleNextTrack()
+        }
+      }
+    })
+
+    return () => unsubscribe()
+  }, [handleNextTrack])
+
+  // ─── Core Hook Playback Logic ──────────────────────────────────────────
 
   // Tự động load và phát bài nếu được truyền trackId
   useEffect(() => {
@@ -162,7 +165,7 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
 
     logger.info('Quay lại chuyển bài:', { title: prevTrack.title })
     s.setCurrentTrack(prevTrack)
-    await AudioManager.loadAndPlay(prevTrack)
+    await AudioManager.loadAndPlay(prevTrack as any)
   }, [currentTime])
 
   const seekTo = useCallback(async (position: number) => {
@@ -187,6 +190,7 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
   return {
     currentTrack: store.currentTrack,
     isPlaying: store.isPlaying,
+    isBuffering,
     shuffleEnabled: store.shuffleEnabled,
     repeatMode: store.repeatMode,
     progress,

@@ -46,6 +46,8 @@ interface DownloadState {
   loadOfflineSongs: () => Promise<void>
   /** Gửi YouTube URL → lấy info → poll → download */
   submitYouTubeUrl: (url: string) => Promise<void>
+  /** Tải bằng Track object có sẵn metadata */
+  downloadByTrack: (track: any) => Promise<void>
   /** Tìm kiếm bài hát trên server bằng từ khoá */
   searchByKeyword: (keyword: string) => Promise<void>
   /** Xoá bài hát offline (file + DB) */
@@ -170,6 +172,84 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
         )
       }
       logger.error('Submit URL thất bại', { url, error })
+    }
+  },
+
+  // ─── Download Bằng Track Object (Metadata có sẵn) ───
+  downloadByTrack: async (track: any) => {
+    const state = get()
+    logger.info('Download bằng Track object', { id: track.id })
+
+    // Đã tải rồi thì thôi
+    if (state.isDownloaded(track.id)) {
+      logger.info('Bài hát đã tải trước đó', { id: track.id })
+      return
+    }
+
+    // Đang tải thì bỏ qua
+    if (state.tasks.some(t => t.trackId === track.id && t.status !== 'error' && t.status !== 'completed')) {
+      logger.info('Bài hát đang được tải', { id: track.id })
+      return
+    }
+
+    // 1. Tạo task ngay lập tức với metadata thật từ Track
+    const task: DownloadItem = {
+      trackId: track.id,
+      title: track.title,
+      artist: track.artist,
+      coverUrl: track.thumbnailUrl,
+      duration: track.durationSeconds,
+      status: 'idle',
+      serverStatus: 'pending',
+      progress: 0,
+      serverProgress: 0,
+      filePath: null,
+      errorMessage: null
+    }
+
+    // Ghi đè task cũ nếu bị lỗi trước đó
+    set({ tasks: [task, ...state.tasks.filter((t) => t.trackId !== track.id)] })
+
+    try {
+      // 2. Gọi API để trigger background task (cần fetchSongInfo để mồi server)
+      const youtubeUrl = `https://youtube.com/watch?v=${track.id}`
+      const songInfo = await fetchSongInfo(youtubeUrl)
+
+      // 3. Poll server status
+      await pollUntilReady(songInfo.id, set, get)
+
+      // 4. Download file MP3
+      updateTask(songInfo.id, { status: 'downloading' }, set, get)
+      const filePath = await downloadAndSave(songInfo, (progress) => {
+        updateTask(songInfo.id, { progress }, set, get)
+      })
+
+      // 5. Hoàn thành
+      updateTask(
+        songInfo.id,
+        {
+          status: 'completed',
+          progress: 1,
+          filePath
+        },
+        set,
+        get
+      )
+
+      // 6. Refresh danh sách offline
+      await get().loadOfflineSongs()
+      logger.info('Download bằng Track hoàn tất', { id: songInfo.id, title: songInfo.title })
+    } catch (error: any) {
+      updateTask(
+        track.id,
+        {
+          status: 'error',
+          errorMessage: error?.message || 'Không thể tải bài hát'
+        },
+        set,
+        get
+      )
+      logger.error('Download bằng Track thất bại', { id: track.id, error })
     }
   },
 

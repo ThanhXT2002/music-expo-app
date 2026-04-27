@@ -32,11 +32,14 @@ export function usePlaylistDetail(playlistId: string) {
 
 /**
  * Hook tải danh sách tất cả playlist.
+ * @param enabled - Tuỳ chọn bật/tắt tự động fetch (mặc định: true)
  */
-export function usePlaylists() {
+export function usePlaylists(enabled: boolean = true) {
   const query = useQuery({
     queryKey: ['playlists'],
-    queryFn: playlistService.getPlaylists
+    queryFn: playlistService.getPlaylists,
+    enabled,
+    staleTime: 5 * 60 * 1000 // Cache 5 phút để tránh gọi API liên tục
   })
 
   return {
@@ -60,6 +63,25 @@ export function useCreatePlaylist() {
     },
     onError: (error) => {
       logger.error('Tạo playlist thất bại', error)
+    }
+  })
+}
+
+/**
+ * Hook thêm bài hát vào playlist.
+ */
+export function useAddSongToPlaylist() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ playlistId, trackId }: { playlistId: string; trackId: string }) =>
+      playlistService.addTrackToPlaylist(playlistId, trackId),
+    onSuccess: (_, variables) => {
+      logger.info('Thêm bài vào playlist thành công — invalidate cache')
+      queryClient.invalidateQueries({ queryKey: ['playlist', variables.playlistId] })
+    },
+    onError: (error) => {
+      logger.error('Thêm bài vào playlist thất bại', error)
     }
   })
 }

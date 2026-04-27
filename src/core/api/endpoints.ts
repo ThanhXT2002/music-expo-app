@@ -66,5 +66,9 @@ export const API_ENDPOINTS = {
   USER_PROFILE: '/user/profile',
   PLAYLISTS: '/playlists',
   PLAYLIST_DETAIL: (id: string) => `/playlists/${id}`,
-  PLAYLIST_TRACKS: (id: string) => `/playlists/${id}/tracks`
+  PLAYLIST_TRACKS: (id: string) => `/playlists/${id}/tracks`,
+
+  // --- Favorites ---
+  FAVORITES: '/favorites',
+  FAVORITES_DELETE: (songId: string) => `/favorites/${songId}`
 } as const

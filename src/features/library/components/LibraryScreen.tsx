@@ -16,6 +16,8 @@ import { Plus, Heart, Clock, ChevronLeft, ChevronRight, MoreHorizontal } from 'l
 import { useSafePush } from '@core/hooks/useSafePush'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePlayerStore } from '@features/player/store/playerStore'
+import { usePlaylistStore } from '@features/playlist/store/playlistStore'
+import { useFavoriteIds } from '../hooks/useFavorites'
 import * as AudioManager from '@core/audio/AudioManager'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, SHADOWS, LAYOUT } from '@shared/constants/spacing'
@@ -128,6 +130,7 @@ export default function LibraryScreen() {
   const { tracks, isLoading, removeTrack } = useLibrary()
   const playerStore = usePlayerStore()
   const [activeTab, setActiveTab] = useState<LibraryTab>('tracks')
+  const { data: favoriteIds = [] } = useFavoriteIds()
 
   const handlePlayTrack = useCallback(
     async (track: Track) => {
@@ -144,17 +147,19 @@ export default function LibraryScreen() {
       playerStore.setQueue(tracks)
       playerStore.setCurrentTrack(track)
 
-      await AudioManager.loadAndPlay({
+      // Navigate ngay → audio load ngầm phía sau
+      safePush(`/player/${track.id}`)
+
+      AudioManager.loadAndPlay({
         id: track.id,
         title: track.title,
         artist: track.artist,
         streamUrl: track.streamUrl || '',
         coverUrl: track.coverUrl,
         durationSeconds: track.durationSeconds
+      }).catch((err) => {
+        console.error('Lỗi phát nhạc từ Library:', err)
       })
-
-      playerStore.setIsPlaying(true)
-      safePush(`/player/${track.id}`)
     },
     [tracks, playerStore, safePush]
   )
@@ -174,7 +179,10 @@ export default function LibraryScreen() {
         <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
           <Text style={styles.headerTitleLeft}>Thư viện</Text>
           <View style={styles.headerRightAbsolute}>
-            <Pressable style={styles.iconButton} onPress={() => safePush('/playlist/create' as any)}>
+            <Pressable style={styles.iconButton} onPress={() => {
+              const { openCreateModal } = usePlaylistStore.getState()
+              openCreateModal()
+            }}>
               <Plus size={20} color='#FFFFFF' />
             </Pressable>
           </View>
@@ -189,10 +197,26 @@ export default function LibraryScreen() {
             {tracks.map((track) => (
               <TrackListItem
                 key={track.id}
-                track={track}
+                track={{ ...track, isDownloaded: true }} // Trong Library mặc định bài hát được xem là đã tải
                 isActive={playerStore.currentTrack?.id === track.id}
                 onPress={() => handlePlayTrack(track)}
-                onMenuPress={() => {
+                onDelete={() => {
+                  removeTrack(track.id)
+                }}
+              />
+            ))}
+          </View>
+        )}
+
+        {activeTab === 'favorites' && tracks.filter(t => favoriteIds.includes(t.id)).length > 0 && (
+          <View style={styles.listSection}>
+            {tracks.filter(t => favoriteIds.includes(t.id)).map((track) => (
+              <TrackListItem
+                key={track.id}
+                track={{ ...track, isDownloaded: true }}
+                isActive={playerStore.currentTrack?.id === track.id}
+                onPress={() => handlePlayTrack(track)}
+                onDelete={() => {
                   removeTrack(track.id)
                 }}
               />
@@ -208,7 +232,15 @@ export default function LibraryScreen() {
           />
         )}
 
-        {(activeTab === 'albums' || activeTab === 'favorites') && (
+        {activeTab === 'favorites' && !isLoading && tracks.filter(t => favoriteIds.includes(t.id)).length === 0 && (
+          <EmptyState
+            icon='heart-outline'
+            title='Chưa có bài hát yêu thích'
+            description='Bạn chưa thêm bài hát offline nào vào danh sách yêu thích.'
+          />
+        )}
+
+        {activeTab === 'albums' && (
           <EmptyState icon='heart-outline' title='Chưa có dữ liệu' description='Tính năng này đang được phát triển.' />
         )}
 

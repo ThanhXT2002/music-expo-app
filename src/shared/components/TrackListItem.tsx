@@ -15,12 +15,14 @@ import Animated, {
   Easing as ReanimatedEasing
 } from 'react-native-reanimated'
 import { Image } from 'expo-image'
-import { MoreVertical } from 'lucide-react-native'
+import { MoreVertical, X, Download, ListMusic, Heart, Trash2 } from 'lucide-react-native'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { formatDuration } from '@shared/utils/formatDuration'
 import type { Track } from '@shared/types/track'
-import React, { useEffect } from 'react'
+import { useTrackActions } from '@shared/hooks/useTrackActions'
+import { useFavoriteIds } from '@features/library/hooks/useFavorites'
+import React, { useEffect, useState } from 'react'
 
 interface TrackListItemProps {
   /** Thông tin bài hát */
@@ -31,8 +33,16 @@ interface TrackListItemProps {
   showCover?: boolean
   /** Callback khi nhấn vào track */
   onPress: (track: Track) => void
-  /** Callback khi nhấn menu "..." */
+  /** Callback khi nhấn menu "..." cũ (Sắp deprecated) */
   onMenuPress?: (track: Track) => void
+  /** Callback tải xuống */
+  onDownload?: (track: Track) => void
+  /** Callback yêu thích */
+  onFavorite?: (track: Track) => void
+  /** Callback thêm vào playlist */
+  onPlaylist?: (track: Track) => void
+  /** Callback xóa khỏi thư viện */
+  onDelete?: (track: Track) => void
   /** Track này đang active (đang phát) */
   isActive?: boolean
   /** Icon hiển thị bên phải, mặc định là 3 chấm */
@@ -97,22 +107,95 @@ export function TrackListItem({
   showCover = true,
   onPress,
   onMenuPress,
+  onDownload,
+  onFavorite,
+  onPlaylist,
+  onDelete,
   isActive = false,
   rightIcon,
   showDuration = true
 }: TrackListItemProps) {
+  const [isActionMode, setIsActionMode] = useState(false)
+  const { data: favoriteIds = [] } = useFavoriteIds()
+  const isFavorited = favoriteIds.includes(track.id)
+  
+  const defaultActions = useTrackActions(isFavorited)
+
+  const handleAction = (action?: (track: Track) => void, fallbackAction?: (track: Track) => void) => {
+    return (e: any) => {
+      e.stopPropagation()
+      setIsActionMode(false)
+      if (action) {
+        action(track)
+      } else if (fallbackAction) {
+        fallbackAction(track)
+      }
+    }
+  }
+
   return (
-    <Pressable onPress={() => onPress(track)}>
+    <Pressable onPress={(e) => {
+      if (isActionMode) {
+        setIsActionMode(false)
+        return
+      }
+      onPress(track)
+    }}>
       {({ pressed }) => (
         <View style={[styles.container, pressed && styles.pressed, isActive && styles.active]}>
-          {/* Số thứ tự hoặc ảnh bìa */}
-          {showCover ? (
-            <TrackCover uri={track.coverUrl} isActive={isActive} />
-          ) : (
-            <View style={styles.indexContainer}>
-              <Text style={[styles.indexText, isActive && { color: COLORS.primary }]}>{index ?? '—'}</Text>
+          {/* Lớp phủ Overlay khi bài hát ở chế độ Action */}
+          {isActionMode && (
+            <View style={styles.fullOverlay}>
+              {/* Nút X nằm chính giữa ảnh bìa */}
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation()
+                  setIsActionMode(false)
+                }}
+                style={styles.overlayCloseBtn}
+              >
+                <X size={20} color="#FFFFFF" />
+              </Pressable>
+              
+              <View style={{ flex: 1 }} />
+              
+              {track.isDownloaded ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Pressable onPress={handleAction(onPlaylist, defaultActions.onPlaylist)} style={styles.actionBtn}>
+                    <ListMusic size={20} color="#FFFFFF" />
+                  </Pressable>
+                  <Pressable onPress={handleAction(onFavorite, defaultActions.onFavorite)} style={styles.actionBtn}>
+                    <Heart 
+                      size={20} 
+                      color={isFavorited ? '#EF4444' : '#FFFFFF'} 
+                      fill={isFavorited ? '#EF4444' : 'transparent'} 
+                    />
+                  </Pressable>
+                  <Pressable onPress={handleAction(onDelete)} style={styles.actionBtn}>
+                    <Trash2 size={20} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable
+                  onPress={handleAction(onDownload, defaultActions.onDownload)}
+                  style={styles.actionBtn}
+                >
+                  <Download size={20} color="#FFFFFF" />
+                </Pressable>
+              )}
             </View>
           )}
+
+          {/* Số thứ tự hoặc ảnh bìa */}
+          <View style={{ position: 'relative' }}>
+            {showCover ? (
+              <TrackCover uri={track.coverUrl} isActive={isActive} />
+            ) : (
+              <View style={styles.indexContainer}>
+                <Text style={[styles.indexText, isActive && { color: COLORS.primary }]}>{index ?? '—'}</Text>
+              </View>
+            )}
+          </View>
 
           {/* Thông tin bài hát */}
           <View style={styles.info}>
@@ -130,17 +213,23 @@ export function TrackListItem({
             </View>
           </View>
 
-          {/* Menu button — luôn hiển thị */}
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation()
-              onMenuPress?.(track)
-            }}
-            hitSlop={12}
-            style={styles.menuButton}
-          >
-            {rightIcon || <MoreVertical size={18} color={COLORS.textMuted} />}
-          </Pressable>
+          {/* Nút Menu (ẩn khi ở Action Mode để không bị bấm trùng với overlay) */}
+          {!isActionMode && (
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation()
+                if (onMenuPress) {
+                  onMenuPress(track)
+                } else {
+                  setIsActionMode(true)
+                }
+              }}
+              hitSlop={12}
+              style={styles.menuButton}
+            >
+              {rightIcon || <MoreVertical size={18} color={COLORS.textMuted} />}
+            </Pressable>
+          )}
         </View>
       )}
     </Pressable>
@@ -226,5 +315,41 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     padding: SPACING.xs
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end', // Để các nút ở bên phải
+    gap: SPACING.md,
+  },
+  actionBtn: {
+    padding: SPACING.sm,
+  },
+  
+  // Overlay Layer (khi track chưa tải)
+  fullOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(26, 26, 46, 0.85)', // Nền mờ đè lên toàn bộ item
+    borderRadius: RADIUS.full, // Bo tròn đồng bộ với trackitem
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    zIndex: 10, // Nổi lên trên tất cả
+  },
+  overlayCloseBtn: {
+    width: 48, // Bằng với kích thước ảnh bìa
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: RADIUS.full,
+    backgroundColor: 'rgba(0,0,0,0.5)', // Tối thêm một chút để nổi bật icon X
+  },
+  actionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: RADIUS.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10
   }
 })

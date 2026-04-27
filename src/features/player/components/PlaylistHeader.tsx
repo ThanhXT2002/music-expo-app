@@ -126,7 +126,9 @@ const styles = StyleSheet.create({
   container: {
     height: 240,
     width: '100%',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    borderTopLeftRadius: RADIUS['2xl'],
+    borderTopRightRadius: RADIUS['2xl'],
   },
   bgBlur: {
     ...StyleSheet.absoluteFillObject,

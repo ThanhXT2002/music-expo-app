@@ -9,6 +9,7 @@ import { View, ScrollView, Pressable, FlatList, ActivityIndicator, StyleSheet, T
 import { useState, useCallback } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { useSafePush } from '@core/hooks/useSafePush'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { BlurView } from 'expo-blur'
@@ -195,6 +196,7 @@ function ArtistResultCard({ artist, onPress }: { artist: Artist; onPress: () => 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const safePush = useSafePush()
 
   const [query, setQuery] = useState('')
   const [isInputFocused, setIsInputFocused] = useState(false)
@@ -202,6 +204,7 @@ export default function SearchScreen() {
 
   const { results, isSearching, hasResults } = useSearchFull(query)
   const { suggestions, isFetchingSuggestions } = useSearchSuggestions(query)
+  const currentTrackId = usePlayerStore((s) => s.currentTrack?.id)
 
   const handleClear = useCallback(() => {
     setQuery('')
@@ -222,28 +225,37 @@ export default function SearchScreen() {
   const handleTrackPress = useCallback(async (track: Track) => {
     try {
       const store = usePlayerStore.getState()
-      // Thêm bài vào Queue nếu chưa có
-      if (!store.queue.some(t => t.id === track.id)) {
-        store.addToQueue(track)
+
+      // Nếu click vào đúng bài đang phát → chỉ mở Player, không restart
+      if (store.currentTrack?.id === track.id) {
+        safePush(`/player/${track.id}`)
+        if (AudioManager.getPlaybackState() === 'paused') {
+          AudioManager.play()
+        }
+        return
+      }
+
+      // Thay thế queue = toàn bộ kết quả tìm kiếm (tracks) để current playlist là "Kết quả tìm kiếm"
+      const searchTracks = results?.tracks ?? []
+      if (searchTracks.length > 0) {
+        store.setQueue(searchTracks)
       }
 
       // Set track hiện tại
       store.setCurrentTrack(track)
 
-      if (!track.streamUrl) {
-        console.error('Track thiếu streamUrl:', track)
-        return
+      // Navigate ngay → audio load ngầm phía sau
+      safePush(`/player/${track.id}`)
+
+      if (track.streamUrl) {
+        AudioManager.loadAndPlay(track as Track & { streamUrl: string }).catch((error) =>
+          console.error('Lỗi phát nhạc:', error)
+        )
       }
-
-      // Gọi AudioManager stream nhạc từ Backend Proxy Pipeline
-      await AudioManager.loadAndPlay(track as Track & { streamUrl: string })
-
-      // Chuyển hướng sang màn hình Now Playing
-      router.push(`/player/${track.id}`)
     } catch (error) {
       console.error('Lỗi phát nhạc:', error)
     }
-  }, [router])
+  }, [safePush, results?.tracks])
 
   const showDropdown = isInputFocused && query.length >= 2
 
@@ -307,7 +319,13 @@ export default function SearchScreen() {
             <View style={styles.resultSection}>
               {activeTab === 'all' && <SectionHeader title='Bài hát' />}
               {results.tracks.slice(0, activeTab === 'all' ? 5 : undefined).map((track) => (
-                <TrackListItem key={track.id} track={track} onPress={handleTrackPress} onMenuPress={() => {}} />
+                <TrackListItem
+                  key={track.id}
+                  track={track}
+                  showCover
+                  isActive={currentTrackId === track.id}
+                  onPress={handleTrackPress}
+                />
               ))}
             </View>
           )}

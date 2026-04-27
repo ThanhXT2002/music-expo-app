@@ -17,6 +17,8 @@ export interface UsePlayerReturn {
   currentTrack: import('@shared/types/track').Track | null
   /** true nếu đang phát, false nếu đang dừng */
   isPlaying: boolean
+  /** true nếu đang tải/buffer bài hát (chưa sẵn sàng phát) */
+  isBuffering: boolean
   /** Chế độ shuffle đang bật? */
   shuffleEnabled: boolean
   /** Chế độ lặp hiện tại */

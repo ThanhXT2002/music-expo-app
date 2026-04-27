@@ -23,6 +23,8 @@ import { useAuthStore } from '@features/auth/store/authStore'
 import * as asyncStorage from '@core/storage/asyncStorage'
 import { COLORS } from '@shared/constants/colors'
 import { ONBOARDING_STORAGE_KEY } from './onboarding'
+import { AddToPlaylistModal } from '@features/playlist/components/AddToPlaylistModal'
+import { CreatePlaylistModal } from '@features/playlist/components/CreatePlaylistModal'
 
 import './global.css'
 
@@ -125,7 +127,6 @@ function RootContent() {
         <Stack.Screen name='album/[id]' options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name='artist/[id]' options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name='playlist/[id]' />
-        <Stack.Screen name='playlist/create' options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
         <Stack.Screen name='song-identify' options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
         <Stack.Screen name='auth/login' options={{ animation: 'fade' }} />
         <Stack.Screen name='auth/register' />
@@ -133,6 +134,9 @@ function RootContent() {
         <Stack.Screen name='auth/verify-email' />
         <Stack.Screen name='+not-found' />
       </Stack>
+
+      <AddToPlaylistModal />
+      <CreatePlaylistModal />
     </View>
   )
 }

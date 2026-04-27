@@ -16,7 +16,7 @@ import Animated, {
   withTiming,
   runOnJS,
   interpolate,
-  Extrapolation,
+  Extrapolation
 } from 'react-native-reanimated'
 import DraggableFlatList, { RenderItemParams, DragEndParams } from 'react-native-draggable-flatlist'
 import { Download } from 'lucide-react-native'
@@ -73,7 +73,7 @@ export function CurrentPlaylistSheet() {
     togglePlayPause,
     next,
     previous,
-    toggleShuffle,
+    toggleShuffle
   } = useCurrentPlaylist()
 
   // translateY: vị trí sheet (negative = hiện lên)
@@ -145,16 +145,11 @@ export function CurrentPlaylistSheet() {
 
   // ─── Animated Styles ──────────────────────────────────────────────────────
   const sheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
+    transform: [{ translateY: translateY.value }]
   }))
 
   const backdropStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      translateY.value,
-      [POS_HIDDEN, POS_HALF, POS_FULL],
-      [0, 0.5, 0.7],
-      Extrapolation.CLAMP
-    ),
+    opacity: interpolate(translateY.value, [POS_HIDDEN, POS_HALF, POS_FULL], [0, 0.5, 0.7], Extrapolation.CLAMP)
   }))
 
   if (!isVisible) return null
@@ -188,58 +183,60 @@ export function CurrentPlaylistSheet() {
         </Pressable>
 
         {/* Sheet — vị trí ban đầu ở dưới đáy, animate lên */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.sheet, sheetStyle]}>
-            {/* Handle bar — vùng kéo */}
-            <View style={styles.handleArea}>
-              <View style={styles.handleBar} />
+        <Animated.View style={[styles.sheet, sheetStyle]}>
+          <GestureDetector gesture={panGesture}>
+            <View collapsable={false} style={styles.headerDragArea}>
+              {/* Handle bar — vùng kéo */}
+              <View style={styles.handleArea}>
+                <View style={styles.handleBar} />
+              </View>
+
+              {/* Header — playlist info + controls */}
+              <PlaylistHeader
+                currentTrack={currentTrack}
+                totalTracks={queue.length}
+                currentIndex={currentIndex}
+                isPlaying={isPlaying}
+                shuffleEnabled={shuffleEnabled}
+                progressPercentage={progressPercentage}
+                remainingTimeText={remainingTimeText}
+                onPrevious={previous}
+                onPlayPause={togglePlayPause}
+                onNext={next}
+                onShuffle={toggleShuffle}
+                headerActions={
+                  <Pressable hitSlop={12} style={{ padding: 4, marginRight: 4 }}>
+                    {/* Icon Tải xuống (giả lập) giống hệt web */}
+                    <Download size={20} color='#FFFFFF' />
+                  </Pressable>
+                }
+              />
             </View>
+          </GestureDetector>
 
-            {/* Header — playlist info + controls */}
-            <PlaylistHeader
-              currentTrack={currentTrack}
-              totalTracks={queue.length}
-              currentIndex={currentIndex}
-              isPlaying={isPlaying}
-              shuffleEnabled={shuffleEnabled}
-              progressPercentage={progressPercentage}
-              remainingTimeText={remainingTimeText}
-              onPrevious={previous}
-              onPlayPause={togglePlayPause}
-              onNext={next}
-              onShuffle={toggleShuffle}
-              headerActions={
-                <Pressable hitSlop={12} style={{ padding: 4, marginRight: 4 }}>
-                  {/* Icon Tải xuống (giả lập) giống hệt web */}
-                  <Download size={20} color="#FFFFFF" />
-                </Pressable>
-              }
-            />
-
-            {/* Danh sách bài hát — kéo thả được */}
-            <View style={[styles.listContainer, { paddingBottom: insets.bottom }]}>
-              {queue.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <EmptyState
-                    icon='list-outline'
-                    title='Danh sách phát trống'
-                    description='Hãy thêm bài hát vào danh sách phát để bắt đầu thưởng thức.'
-                  />
-                </View>
-              ) : (
-                <DraggableFlatList
-                  data={queue}
-                  onDragEnd={handleDragEnd}
-                  keyExtractor={(item) => item.id}
-                  renderItem={renderItem}
-                  contentContainerStyle={styles.flatListContent}
-                  showsVerticalScrollIndicator={false}
-                  activationDistance={5}
+          {/* Danh sách bài hát — kéo thả được */}
+          <View style={[styles.listContainer, { paddingBottom: insets.bottom }]}>
+            {queue.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <EmptyState
+                  icon='list-outline'
+                  title='Danh sách phát trống'
+                  description='Hãy thêm bài hát vào danh sách phát để bắt đầu thưởng thức.'
                 />
-              )}
-            </View>
-          </Animated.View>
-        </GestureDetector>
+              </View>
+            ) : (
+              <DraggableFlatList
+                data={queue}
+                onDragEnd={handleDragEnd}
+                keyExtractor={(item) => item.id}
+                renderItem={renderItem}
+                contentContainerStyle={styles.flatListContent}
+                showsVerticalScrollIndicator={false}
+                activationDistance={5}
+              />
+            )}
+          </View>
+        </Animated.View>
       </GestureHandlerRootView>
     </Modal>
   )
@@ -249,11 +246,11 @@ export function CurrentPlaylistSheet() {
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
+    flex: 1
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#000',
+    backgroundColor: '#000'
   },
   sheet: {
     position: 'absolute',
@@ -269,7 +266,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
-    elevation: 30,
+    elevation: 30
   },
   handleArea: {
     position: 'absolute',
@@ -278,25 +275,28 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 10,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: 'center'
+  },
+  headerDragArea: {
+    backgroundColor: 'transparent'
   },
   handleBar: {
     width: 40,
     height: 5,
     borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.4)'
   },
   listContainer: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.background
   },
   flatListContent: {
     paddingTop: SPACING.sm,
-    paddingBottom: SPACING['3xl'],
+    paddingBottom: SPACING['3xl']
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
-    padding: SPACING.xl,
-  },
+    padding: SPACING.xl
+  }
 })

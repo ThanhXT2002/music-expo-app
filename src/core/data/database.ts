@@ -79,6 +79,12 @@ const MIGRATIONS: string[] = [
     songId TEXT NOT NULL,
     addedAt TEXT DEFAULT (datetime('now')),
     PRIMARY KEY (playlistId, songId)
+  )`,
+
+  // ── Bảng 7: Yêu thích ──
+  `CREATE TABLE IF NOT EXISTS favorites (
+    songId TEXT PRIMARY KEY NOT NULL,
+    addedAt TEXT DEFAULT (datetime('now'))
   )`
 ]
 
@@ -264,4 +270,101 @@ export async function getPlayHistory(limit: number = 50): Promise<PlayHistoryIte
 export async function clearPlayHistory(): Promise<void> {
   const db = await getDb()
   await db.runAsync('DELETE FROM play_history')
+}
+
+// ─── Repository: Playlists (Offline) ─────────────────────────────────────────
+
+export interface LocalPlaylist {
+  id: string
+  title: string
+  createdAt: string
+  trackCount: number
+}
+
+/** Lấy danh sách playlist từ SQLite */
+export async function getPlaylistsLocal(): Promise<LocalPlaylist[]> {
+  const db = await getDb()
+  const rows = await db.getAllAsync<{ id: string; name: string; createdAt: string; trackCount: number }>(
+    `SELECT p.id, p.name, p.createdAt, COUNT(ps.songId) as trackCount
+     FROM playlists p
+     LEFT JOIN playlist_songs ps ON p.id = ps.playlistId
+     GROUP BY p.id
+     ORDER BY p.createdAt DESC`
+  )
+  return rows.map(r => ({
+    id: r.id,
+    title: r.name,
+    createdAt: r.createdAt,
+    trackCount: r.trackCount
+  }))
+}
+
+/** Lưu playlist mới vào SQLite */
+export async function savePlaylistLocal(id: string, title: string): Promise<void> {
+  const db = await getDb()
+  await db.runAsync('INSERT OR REPLACE INTO playlists (id, name) VALUES (?, ?)', [id, title])
+}
+
+/** Xoá playlist (và xoá bài hát bên trong) */
+export async function deletePlaylistLocal(id: string): Promise<void> {
+  const db = await getDb()
+  await db.runAsync('DELETE FROM playlist_songs WHERE playlistId = ?', [id])
+  await db.runAsync('DELETE FROM playlists WHERE id = ?', [id])
+}
+
+/** Thêm bài hát vào playlist */
+export async function addTrackToPlaylistLocal(playlistId: string, songId: string): Promise<void> {
+  const db = await getDb()
+  await db.runAsync('INSERT OR IGNORE INTO playlist_songs (playlistId, songId) VALUES (?, ?)', [playlistId, songId])
+}
+
+/** Xoá bài hát khỏi playlist */
+export async function removeTrackFromPlaylistLocal(playlistId: string, songId: string): Promise<void> {
+  const db = await getDb()
+  await db.runAsync('DELETE FROM playlist_songs WHERE playlistId = ? AND songId = ?', [playlistId, songId])
+}
+
+/** Lấy danh sách bài hát trong playlist (chỉ lấy ID, nếu cần data thật thì join offline_songs) */
+export async function getPlaylistTracksLocal(playlistId: string): Promise<string[]> {
+  const db = await getDb()
+  const rows = await db.getAllAsync<{ songId: string }>(
+    'SELECT songId FROM playlist_songs WHERE playlistId = ? ORDER BY addedAt DESC',
+    [playlistId]
+  )
+  return rows.map(r => r.songId)
+}
+
+// ─── Repository: Favorites (Offline) ─────────────────────────────────────────
+
+/** Lấy danh sách ID bài hát yêu thích từ SQLite */
+export async function getFavoriteIdsLocal(): Promise<string[]> {
+  const db = await getDb()
+  const rows = await db.getAllAsync<{ songId: string }>('SELECT songId FROM favorites ORDER BY addedAt DESC')
+  return rows.map((r) => r.songId)
+}
+
+/** Lưu danh sách ID bài hát yêu thích (Sync từ server) */
+export async function syncFavoritesLocal(songIds: string[]): Promise<void> {
+  const db = await getDb()
+  await db.execAsync('BEGIN TRANSACTION')
+  try {
+    await db.execAsync('DELETE FROM favorites')
+    for (const id of songIds) {
+      await db.runAsync('INSERT INTO favorites (songId) VALUES (?)', [id])
+    }
+    await db.execAsync('COMMIT')
+  } catch (err) {
+    await db.execAsync('ROLLBACK')
+    throw err
+  }
+}
+
+/** Thêm/Xóa bài hát khỏi danh sách yêu thích local */
+export async function toggleFavoriteLocal(songId: string, isFavorite: boolean): Promise<void> {
+  const db = await getDb()
+  if (isFavorite) {
+    await db.runAsync('INSERT OR IGNORE INTO favorites (songId) VALUES (?)', [songId])
+  } else {
+    await db.runAsync('DELETE FROM favorites WHERE songId = ?', [songId])
+  }
 }

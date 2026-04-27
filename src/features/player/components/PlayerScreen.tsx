@@ -14,7 +14,7 @@
  * @module features/player
  */
 
-import { View, Pressable, StyleSheet, Dimensions, Animated, Easing, Text } from 'react-native'
+import { View, Pressable, StyleSheet, Dimensions, Animated, Easing, Text, ActivityIndicator } from 'react-native'
 
 import { useEffect, useRef } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -48,6 +48,8 @@ import { usePlayerStore } from '../store/playerStore'
 import { ProgressBar } from './ProgressBar'
 import { CurrentPlaylistSheet } from './CurrentPlaylistSheet'
 import { useDownloadStore } from '@features/downloads/store/downloadStore'
+import { useTrackActions } from '@shared/hooks/useTrackActions'
+import { useFavoriteIds } from '@features/library/hooks/useFavorites'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 
@@ -112,6 +114,7 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
   const {
     currentTrack,
     isPlaying,
+    isBuffering,
     progress,
     currentTime,
     duration,
@@ -148,6 +151,13 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
   const shuffleColor = shuffleEnabled ? COLORS.primary : COLORS.textMuted
 
   const isDownloaded = useDownloadStore((state) => state.offlineSongs.some((s) => s.id === trackId))
+
+  // Actions cho 3 nút: Playlist, Download, Favorite
+  const { data: favoriteIds = [] } = useFavoriteIds()
+  const isFavorited = currentTrack ? favoriteIds.includes(currentTrack.id) : false
+  const trackActions = useTrackActions(isFavorited)
+
+  const openPlaylist = usePlayerStore((s) => s.openCurrentPlaylist)
 
   return (
     <View style={styles.container}>
@@ -193,18 +203,24 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
 
       {/* ── Action Row: Playlist + Download / Heart ── */}
       <View style={styles.actionRow}>
-        <Pressable style={styles.actionBtn} hitSlop={8}>
+        <Pressable style={styles.actionBtn} hitSlop={8} onPress={openPlaylist}>
           <ListMusic size={22} color={COLORS.textSecondary} />
         </Pressable>
         <View style={styles.actionRight}>
-          {!isDownloaded && (
-            <Pressable style={styles.actionBtn} hitSlop={8}>
+          {!isDownloaded && currentTrack && (
+            <Pressable style={styles.actionBtn} hitSlop={8} onPress={() => trackActions.onDownload(currentTrack)}>
               <Download size={22} color={COLORS.textSecondary} />
             </Pressable>
           )}
-          <Pressable style={styles.actionBtn} hitSlop={8}>
-            <Heart size={22} color={COLORS.textSecondary} />
-          </Pressable>
+          {currentTrack && (
+            <Pressable style={styles.actionBtn} hitSlop={8} onPress={() => trackActions.onFavorite(currentTrack)}>
+              <Heart
+                size={22}
+                color={isFavorited ? '#EF4444' : COLORS.textSecondary}
+                fill={isFavorited ? '#EF4444' : 'transparent'}
+              />
+            </Pressable>
+          )}
         </View>
       </View>
 
@@ -226,8 +242,10 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
         </Pressable>
 
         {/* Play/Pause — Large button */}
-        <Pressable onPress={handlePlayPause} style={styles.playBtn}>
-          {isPlaying ? (
+        <Pressable onPress={handlePlayPause} style={styles.playBtn} disabled={isBuffering}>
+          {isBuffering ? (
+            <ActivityIndicator size={32} color='#000000' />
+          ) : isPlaying ? (
             <View style={styles.pauseIconGroup}>
               <View style={styles.pauseBar} />
               <View style={styles.pauseBar} />
