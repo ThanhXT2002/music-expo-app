@@ -9,11 +9,12 @@ import { View, ScrollView, Pressable, StyleSheet, Switch, Alert, Text, Dimension
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
-import { User, Bell, Palette, Shield, LogOut, ChevronRight, Info, HelpCircle, FileText, ShieldCheck } from 'lucide-react-native'
+import { User, Bell, Palette, Shield, LogOut, ChevronRight, Info, HelpCircle, FileText, ShieldCheck, ArrowLeftRight } from 'lucide-react-native'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing'
 import { useAuth } from '@features/auth/hooks/useAuth'
 import { GlassCard } from '@shared/components/GlassCard'
+import { useTabBarStore } from '@shared/store/tabBarStore'
 
 const MOOD_BEAT_COLORS = {
   primary: '#6C5CE7',
@@ -62,6 +63,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { user, logout } = useAuth()
+  const { searchPosition, toggleSearchPosition } = useTabBarStore()
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?', [
@@ -152,7 +154,20 @@ export default function SettingsScreen() {
               <SettingItem
                 icon={<Bell size={20} color={MOOD_BEAT_COLORS.secondary} />}
                 title='Thông báo'
-                rightElement={<Switch value={true} trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }} thumbColor={"#FFFFFF"} />}
+                rightElement={<Switch value={true} trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }} thumbColor={'#FFFFFF'} />}
+              />
+              <SettingItem
+                icon={<ArrowLeftRight size={20} color={MOOD_BEAT_COLORS.accent} />}
+                title='Nút tìm kiếm bên phải'
+                subtitle={searchPosition === 'right' ? 'Đang ở bên phải' : 'Đang ở bên trái'}
+                rightElement={
+                  <Switch
+                    value={searchPosition === 'right'}
+                    onValueChange={toggleSearchPosition}
+                    trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }}
+                    thumbColor='#FFFFFF'
+                  />
+                }
               />
               <SettingItem
                 icon={<Palette size={20} color={MOOD_BEAT_COLORS.primary} />}

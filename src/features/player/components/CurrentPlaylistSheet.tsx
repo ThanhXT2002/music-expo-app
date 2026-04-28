@@ -19,13 +19,15 @@ import Animated, {
   Extrapolation
 } from 'react-native-reanimated'
 import DraggableFlatList, { RenderItemParams, DragEndParams } from 'react-native-draggable-flatlist'
-import { Download } from 'lucide-react-native'
+import { Download, CheckCircle } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { PlaylistHeader } from './PlaylistHeader'
 import { DraggableTrackItem } from './DraggableTrackItem'
 import { useCurrentPlaylist } from '../hooks/useCurrentPlaylist'
 import { usePlayerStore } from '../store/playerStore'
 import { EmptyState } from '@shared/components/EmptyState'
+import { useDownloadStore } from '@features/downloads/store/downloadStore'
+import { useTrackActions } from '@shared/hooks/useTrackActions'
 import { COLORS } from '@shared/constants/colors'
 import { RADIUS, SPACING } from '@shared/constants/spacing'
 import type { Track } from '@shared/types/track'
@@ -59,6 +61,11 @@ export function CurrentPlaylistSheet() {
   const insets = useSafeAreaInsets()
   const store = usePlayerStore()
   const isVisible = store.showCurrentPlaylist
+
+  // Kiểm tra bài hát hiện tại đã tải offline chưa
+  const currentTrackId = store.currentTrack?.id
+  const isDownloaded = useDownloadStore((s) => currentTrackId ? s.offlineSongs.some((song) => song.id === currentTrackId) : false)
+  const trackActions = useTrackActions(false)
 
   const {
     queue,
@@ -205,10 +212,19 @@ export function CurrentPlaylistSheet() {
                 onNext={next}
                 onShuffle={toggleShuffle}
                 headerActions={
-                  <Pressable hitSlop={12} style={{ padding: 4, marginRight: 4 }}>
-                    {/* Icon Tải xuống (giả lập) giống hệt web */}
-                    <Download size={20} color='#FFFFFF' />
-                  </Pressable>
+                  !isDownloaded && store.currentTrack ? (
+                    <Pressable
+                      hitSlop={12}
+                      style={{ padding: 4, marginRight: 4 }}
+                      onPress={() => trackActions.onDownload(store.currentTrack!)}
+                    >
+                      <Download size={20} color='#FFFFFF' />
+                    </Pressable>
+                  ) : isDownloaded ? (
+                    <View style={{ padding: 4, marginRight: 4 }}>
+                      <CheckCircle size={20} color={COLORS.success} />
+                    </View>
+                  ) : null
                 }
               />
             </View>

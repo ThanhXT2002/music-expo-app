@@ -46,12 +46,25 @@ export function useBootstrap(): void {
         logger.error('Khởi tạo audio engine thất bại', error)
       }
 
-      // SQLite database
+      // SQLite database + nạp danh sách offline songs vào store
       try {
         await initDb()
         logger.info('SQLite database sẵn sàng')
+
+        // Nạp offline songs ngay sau khi DB sẵn sàng để isDownloaded hoạt động ở mọi screen
+        const { useDownloadStore } = await import('@features/downloads/store/downloadStore')
+        await useDownloadStore.getState().loadOfflineSongs()
+        logger.info('Offline songs đã nạp vào store')
       } catch (error) {
         logger.error('Khởi tạo database thất bại', error)
+      }
+
+      // Tab bar preference (vị trí search circle)
+      try {
+        const { useTabBarStore } = await import('@shared/store/tabBarStore')
+        await useTabBarStore.getState().loadPreference()
+      } catch (error) {
+        logger.error('Load tab bar preference thất bại', error)
       }
 
       // Restore session
