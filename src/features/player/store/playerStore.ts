@@ -31,6 +31,8 @@ interface PlayerStore {
 
   /** Hiển thị bottom sheet current playlist */
   showCurrentPlaylist: boolean
+  /** Vị trí phát cuối cùng (tính bằng giây) */
+  lastPosition: number
 
   // --- Actions ---
   setCurrentTrack: (track: Track | null) => void
@@ -42,6 +44,7 @@ interface PlayerStore {
   clearQueue: () => void
   setRepeatMode: (mode: RepeatMode) => void
   toggleShuffle: () => void
+  setLastPosition: (position: number) => void
   
   openCurrentPlaylist: () => void
   closeCurrentPlaylist: () => void
@@ -60,11 +63,12 @@ export const usePlayerStore = create<PlayerStore>()(
       repeatMode: 'none',
       shuffleEnabled: false,
       showCurrentPlaylist: false,
+      lastPosition: 0,
 
       // --- Actions ---
       setCurrentTrack: (track) => {
         logger.debug('Cập nhật track hiện tại', { trackId: track?.id ?? 'null' })
-        set({ currentTrack: track })
+        set({ currentTrack: track, lastPosition: 0 })
       },
 
       setIsPlaying: (isPlaying) => {
@@ -120,6 +124,10 @@ export const usePlayerStore = create<PlayerStore>()(
         set({ shuffleEnabled: newValue })
       },
 
+      setLastPosition: (position) => {
+        set({ lastPosition: position })
+      },
+
       openCurrentPlaylist: () => {
         set({ showCurrentPlaylist: true })
       },
@@ -135,7 +143,8 @@ export const usePlayerStore = create<PlayerStore>()(
         repeatMode: state.repeatMode,
         shuffleEnabled: state.shuffleEnabled,
         currentTrack: state.currentTrack,
-        queue: state.queue
+        queue: state.queue,
+        lastPosition: state.lastPosition
       })
     }
   )

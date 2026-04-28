@@ -20,7 +20,8 @@ import Reanimated, {
   withSpring,
   withTiming,
   interpolate,
-  Extrapolation
+  Extrapolation,
+  runOnJS
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native'
@@ -112,27 +113,44 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
     }
   }, [currentTrack, router])
 
-  // ── Pan Gesture — kéo ngang để expand/collapse ──
+  // ── Pan Gesture — kéo ngang để expand/collapse & kéo lên để mở Player ──
   const panGesture = useMemo(
     () =>
       Gesture.Pan()
         .activeOffsetX([-15, 15])
+        .activeOffsetY([-15, 15]) // Kích hoạt thêm cả vuốt dọc
         .onUpdate((e) => {
           'worklet'
-          // Mini player ở trái → kéo PHẢI (translationX > 0) về phía pill để expand
-          // Mini player ở phải → kéo TRÁI (translationX < 0) về phía pill để expand
+          // Nếu thao tác vuốt dọc rõ rệt hơn vuốt ngang, bỏ qua update thanh ngang
+          if (Math.abs(e.translationY) > Math.abs(e.translationX)) {
+            return
+          }
+
+          // Kéo ngang để expand
           const translation = isSearchRight ? -e.translationX : e.translationX
           const normalized = Math.max(0, Math.min(translation / DRAG_THRESHOLD, 1))
           expandProgress.value = normalized
         })
-        .onEnd(() => {
+        .onEnd((e) => {
           'worklet'
-          expandProgress.value = withSpring(expandProgress.value > 0.4 ? 1 : 0, {
-            damping: 20,
-            stiffness: 150
-          })
+          // Kiểm tra nếu vuốt lên trên ít nhất 50px
+          if (e.translationY < -50) {
+            runOnJS(handleTapExpanded)()
+            
+            // Đưa UI ngang về lại vị trí ổn định hiện tại
+            expandProgress.value = withSpring(expandProgress.value > 0.4 ? 1 : 0, {
+              damping: 20,
+              stiffness: 150
+            })
+          } else {
+            // Xử lý nốt việc kéo ngang
+            expandProgress.value = withSpring(expandProgress.value > 0.4 ? 1 : 0, {
+              damping: 20,
+              stiffness: 150
+            })
+          }
         }),
-    [isSearchRight, expandProgress]
+    [isSearchRight, expandProgress, handleTapExpanded]
   )
 
   // ── Animated styles ──

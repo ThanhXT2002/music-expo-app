@@ -21,6 +21,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
+import { GestureDetector, Gesture } from 'react-native-gesture-handler'
+import { runOnJS } from 'react-native-reanimated'
 import { SpinningDisc } from '@shared/components/SpinningDisc'
 import {
   ChevronDown,
@@ -109,8 +111,19 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
 
   const openPlaylist = usePlayerStore((s) => s.openCurrentPlaylist)
 
+  // ─── Gesture: Vuốt xuống để tắt Player ───
+  const panGesture = Gesture.Pan()
+    .activeOffsetY(40) // Kích hoạt khi vuốt dọc (tránh nhầm với vuốt ngang tua nhạc)
+    .onEnd((e) => {
+      // Nếu vuốt xuống đủ dài hoặc vuốt nhanh thì tắt
+      if (e.translationY > 100 || e.velocityY > 500) {
+        runOnJS(router.back)()
+      }
+    })
+
   return (
-    <View style={styles.container}>
+    <GestureDetector gesture={panGesture}>
+      <View style={styles.container}>
       {/* ── Ambient background ── */}
       <Image source={{ uri: coverUrl }} style={styles.ambientBg} contentFit='cover' blurRadius={80} />
       <LinearGradient
@@ -230,7 +243,8 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
 
       {/* ── Current Playlist Sheet ── */}
       <CurrentPlaylistSheet />
-    </View>
+      </View>
+    </GestureDetector>
   )
 }
 

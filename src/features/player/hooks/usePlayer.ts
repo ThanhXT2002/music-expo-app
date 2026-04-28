@@ -33,6 +33,10 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
   const [duration, setDuration] = useState(0)
   const [isBuffering, setIsBuffering] = useState(false)
 
+  // Ref tracking last saved position to throttle Zustand store writes
+  const lastSavedPositionRef = useRef<number>(0)
+  
+  // Dùng ref để đảm bảo gọi handleNextTrack đúng 1 lần khi chuyển bài tự động
   const handledTrackEndRef = useRef<string | null>(null)
 
   const handleNextTrack = useCallback(async (manual = false) => {
@@ -101,6 +105,13 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
       // Sync isBuffering — true khi AudioManager đang loading
       setIsBuffering(state === 'loading')
 
+      // Cập nhật lastPosition vào store mỗi 5 giây để lưu vị trí khi thoát app
+      const currentInt = Math.floor(progressData.currentTime)
+      if (currentInt > 0 && currentInt % 5 === 0 && currentInt !== lastSavedPositionRef.current) {
+        lastSavedPositionRef.current = currentInt
+        usePlayerStore.getState().setLastPosition(currentInt)
+      }
+
       // Tự động chuyển bài khi kết thúc
       if (state === 'stopped' && progressData.progress > 0) {
         const currentId = usePlayerStore.getState().currentTrack?.id
@@ -125,7 +136,12 @@ export function usePlayer(trackId?: string): UsePlayerReturn {
   const play = useCallback(async () => {
     logger.debug('Gọi play()', { trackId: store.currentTrack?.id })
     try {
-      await AudioManager.play()
+      if (!AudioManager.getCurrentTrack() && store.currentTrack) {
+        logger.info('Khôi phục và load bài hát từ session cũ', { lastPosition: store.lastPosition })
+        await AudioManager.loadAndPlay(store.currentTrack as any, store.lastPosition || 0)
+      } else {
+        await AudioManager.play()
+      }
       // isPlaying sẽ được sync từ AudioManager listener ở trên
     } catch (error) {
       logger.error('Lỗi khi phát nhạc', error)

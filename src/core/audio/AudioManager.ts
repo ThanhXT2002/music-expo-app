@@ -71,7 +71,7 @@ let latestLoadId = 0
  *
  * @param track - Thông tin bài hát cần phát
  */
-export async function loadAndPlay(track: AudioTrack): Promise<void> {
+export async function loadAndPlay(track: AudioTrack, initialPositionSeconds: number = 0): Promise<void> {
   const myLoadId = ++latestLoadId
   logger.info('Load bài hát mới', { trackId: track.id, title: track.title, loadId: myLoadId })
 
@@ -114,7 +114,7 @@ export async function loadAndPlay(track: AudioTrack): Promise<void> {
     }
 
     // Reset progress cho bài mới
-    lastProgress = { currentTime: 0, duration: 0, progress: 0, buffered: 0 }
+    lastProgress = { currentTime: initialPositionSeconds, duration: 0, progress: 0, buffered: 0 }
 
     playbackState = 'loading'
     notifyListeners()
@@ -123,6 +123,7 @@ export async function loadAndPlay(track: AudioTrack): Promise<void> {
       { uri: track.streamUrl },
       {
         shouldPlay: true,
+        positionMillis: initialPositionSeconds * 1000,
         // Cấu hình cập nhật tiến trình mỗi 250ms thay vì mặc định 500ms
         progressUpdateIntervalMillis: 250
       },

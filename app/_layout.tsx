@@ -26,6 +26,8 @@ import { ONBOARDING_STORAGE_KEY } from './onboarding'
 import { AddToPlaylistModal } from '@features/playlist/components/AddToPlaylistModal'
 import { CreatePlaylistModal } from '@features/playlist/components/CreatePlaylistModal'
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+
 import './global.css'
 
 /**
@@ -33,9 +35,11 @@ import './global.css'
  */
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RootContent />
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <RootContent />
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   )
 }
 
@@ -122,7 +126,7 @@ function RootContent() {
       >
         <Stack.Screen name='(tabs)' />
         <Stack.Screen name='onboarding' options={{ animation: 'fade' }} />
-        <Stack.Screen name='player/[id]' options={{ animation: 'slide_from_bottom', presentation: 'modal' }} />
+        <Stack.Screen name='player/[id]' options={{ animation: 'slide_from_bottom', presentation: 'modal', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name='song/[id]' options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name='album/[id]' options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name='artist/[id]' options={{ animation: 'slide_from_right' }} />
