@@ -21,14 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import Reanimated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  cancelAnimation,
-  Easing as ReanimatedEasing
-} from 'react-native-reanimated'
+import { SpinningDisc } from '@shared/components/SpinningDisc'
 import {
   ChevronDown,
   Heart,
@@ -61,50 +54,7 @@ interface PlayerScreenProps {
   trackId: string
 }
 
-// ─── Spinning Disc Component ─────────────────────────────────────────────────
-
-function SpinningDisc({ uri, isPlaying, size }: { uri: string; isPlaying: boolean; size: number }) {
-  const rotation = useSharedValue(0)
-
-  useEffect(() => {
-    if (isPlaying) {
-      // Xoay liên tục vô hạn, mỗi vòng 8 giây (360 độ)
-      rotation.value = withRepeat(
-        withTiming(rotation.value + 360, {
-          duration: 8000,
-          easing: ReanimatedEasing.linear
-        }),
-        -1, // Lặp vô cực
-        false // Không chạy ngược lại
-      )
-    } else {
-      // Dừng ngay lập tức (giữ nguyên vị trí)
-      cancelAnimation(rotation)
-    }
-  }, [isPlaying, rotation])
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }]
-  }))
-
-  return (
-    <View style={[styles.discContainer, { width: size, height: size }]}>
-      {/* Disc shadow glow */}
-      <View style={[styles.discGlow, { width: size + 20, height: size + 20 }]} />
-
-      <Reanimated.View style={[styles.disc, { width: size, height: size, borderRadius: size / 2 }, animatedStyle]}>
-        <Image
-          source={{ uri }}
-          style={[styles.discImage, { width: size, height: size, borderRadius: size / 2 }]}
-          contentFit='cover'
-          transition={400}
-        />
-        {/* Lỗ đĩa than ở giữa */}
-        <View style={styles.discHole} />
-      </Reanimated.View>
-    </View>
-  )
-}
+// SpinningDisc đã được tách ra @shared/components/SpinningDisc.tsx
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 

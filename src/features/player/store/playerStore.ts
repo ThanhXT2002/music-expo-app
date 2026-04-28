@@ -133,7 +133,9 @@ export const usePlayerStore = create<PlayerStore>()(
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         repeatMode: state.repeatMode,
-        shuffleEnabled: state.shuffleEnabled
+        shuffleEnabled: state.shuffleEnabled,
+        currentTrack: state.currentTrack,
+        queue: state.queue
       })
     }
   )

@@ -1,10 +1,14 @@
 /**
  * @file _layout.tsx
- * @description Tab layout: Search circle (trái) + PillTabBar 4 tab đồng nhất.
+ * @description Tab layout: Mini Player circle + PillTabBar 4 tab.
  *
  * Layout:
- *   (🔍)   [ 🏠 | 📚 | ⬇️ | ⚙️ ]
- *   Search    Home | Library | Downloads | Settings
+ *   Có track:    (🎵)  [ 🏠 | 📚 | ⬇️ | ⚙️ ]
+ *   Không track:       [ 🏠 | 📚 | ⬇️ | ⚙️ ]
+ *
+ * Mini Player circle thay thế vị trí Search circle cũ.
+ * Khi không có bài hát → pill bar chiếm full width.
+ * Search sẽ được triển khai ở header Home page sau.
  *
  * @module app/(tabs)
  */
@@ -16,21 +20,22 @@ import { View, Pressable, StyleSheet, Platform, Dimensions, Animated, Text } fro
 import * as Haptics from 'expo-haptics'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { BlurView } from 'expo-blur'
-import { Home, Search, LibraryBig, DownloadCloud, Settings } from 'lucide-react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { Home, LibraryBig, DownloadCloud, Settings } from 'lucide-react-native'
 import { COLORS } from '@shared/constants/colors'
+import { usePlayerStore } from '@features/player/store/playerStore'
 import { useTabBarStore } from '@shared/store/tabBarStore'
+import { TabBarMiniPlayer } from '@features/player/components/TabBarMiniPlayer'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-/** Tab nằm trong pill bar (theo thứ tự hiển thị) */
+/** Tab nằm trong pill bar */
 const PILL_TABS = ['index', 'library', 'downloads', 'settings'] as const
-const SEARCH_TAB = 'list'
 
 const TAB_CONFIG: Record<string, { Icon: any; label: string }> = {
   index: { Icon: Home, label: 'TRANG CHỦ' },
-  list: { Icon: Search, label: 'TÌM KIẾM' },
   library: { Icon: LibraryBig, label: 'THƯ VIỆN' },
   downloads: { Icon: DownloadCloud, label: 'TẢI XUỐNG' },
   settings: { Icon: Settings, label: 'CÀI ĐẶT' }
@@ -38,14 +43,22 @@ const TAB_CONFIG: Record<string, { Icon: any; label: string }> = {
 
 // ─── Dimensions ──────────────────────────────────────────────────────────────
 
-const SEARCH_SIZE = 64
-const SEARCH_GAP = 10
+const CIRCLE_SIZE = 64
+const CIRCLE_GAP = 10
 const PILL_H_PAD = 4
 const OUTER_H_PAD = 16
 const PILL_HEIGHT = 64
 
-const PILL_INNER_WIDTH = SCREEN_WIDTH - OUTER_H_PAD * 2 - SEARCH_SIZE - SEARCH_GAP - PILL_H_PAD * 2
-const TAB_WIDTH = PILL_INNER_WIDTH / PILL_TABS.length
+/**
+ * Tính TAB_WIDTH tùy thuộc có Mini Player circle hay không.
+ * Khi có track → pill nhỏ hơn (trừ circle + gap).
+ * Khi không có track → pill full width.
+ */
+function calcTabWidth(hasTrack: boolean) {
+  const circleSpace = hasTrack ? CIRCLE_SIZE + CIRCLE_GAP : 0
+  const pillInner = SCREEN_WIDTH - OUTER_H_PAD * 2 - circleSpace - PILL_H_PAD * 2
+  return pillInner / PILL_TABS.length
+}
 
 // ─── PillTabBar ──────────────────────────────────────────────────────────────
 
@@ -54,16 +67,20 @@ function PillTabBar({ state, navigation }: any) {
 
   const currentName = state.routes[state.index]?.name
   const pillIndex = PILL_TABS.indexOf(currentName as any)
-  const isSearchActive = currentName === SEARCH_TAB
-  const searchPosition = useTabBarStore((s) => s.searchPosition)
-  const isSearchRight = searchPosition === 'right'
+
+  // Mini Player position — dùng lại setting searchPosition (left/right)
+  const miniPlayerPosition = useTabBarStore((s) => s.searchPosition)
+  const isMiniPlayerRight = miniPlayerPosition === 'right'
+
+  // Kiểm tra có bài hát → quyết định hiển thị circle
+  const hasTrack = usePlayerStore((s) => s.currentTrack !== null)
+  const TAB_WIDTH = calcTabWidth(hasTrack)
 
   const animValue = useRef(new Animated.Value(pillIndex >= 0 ? pillIndex : 0)).current
   const indicatorOp = useRef(new Animated.Value(pillIndex >= 0 ? 1 : 0)).current
 
   useEffect(() => {
     if (pillIndex >= 0) {
-      // Tab trong pill active → slide indicator
       Animated.parallel([
         Animated.spring(animValue, {
           toValue: pillIndex,
@@ -75,7 +92,6 @@ function PillTabBar({ state, navigation }: any) {
         Animated.timing(indicatorOp, { toValue: 1, duration: 200, useNativeDriver: true })
       ]).start()
     } else {
-      // Search active → ẩn indicator
       Animated.timing(indicatorOp, { toValue: 0, duration: 150, useNativeDriver: true }).start()
     }
   }, [state.index])
@@ -88,25 +104,34 @@ function PillTabBar({ state, navigation }: any) {
     if (currentName !== name && !ev.defaultPrevented) navigation.navigate(name, route.params)
   }
 
-  return (
-    <View style={[styles.outer, { paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24, flexDirection: isSearchRight ? 'row-reverse' : 'row' }]}>
-      {/* ── Search Circle (bên trái) ── */}
-      <Pressable
-        style={[styles.searchCircle, isSearchActive && styles.searchActive]}
-        onPress={() => goTo(SEARCH_TAB)}
-        accessibilityRole='button'
-        accessibilityLabel='TÌM KIẾM'
-      >
-        <BlurView intensity={30} tint='dark' experimentalBlurMethod='dimezisBlurView' style={StyleSheet.absoluteFillObject} />
-        <View style={[StyleSheet.absoluteFillObject, styles.searchOverlay]} />
-        {isSearchActive && <View style={[StyleSheet.absoluteFillObject, styles.searchHighlight]} />}
-        <Search size={22} color={isSearchActive ? COLORS.primary : COLORS.textMuted} strokeWidth={isSearchActive ? 2.5 : 1.8} />
-      </Pressable>
+  /**
+   * Layout:
+   * - isMiniPlayerRight=false (mặc định): MiniPlayer(trái) + Pill
+   * - isMiniPlayerRight=true:             Pill + MiniPlayer(phải)
+   * - Không có track:                     chỉ Pill (full width)
+   */
 
-      {/* ── Pill Bar (bên phải, 4 tab đồng nhất) ── */}
+  return (
+    <GestureHandlerRootView
+      style={[
+        styles.outer,
+        {
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24,
+          flexDirection: isMiniPlayerRight ? 'row' : 'row'
+        }
+      ]}
+    >
+      {/* Mini Player circle — bên trái (mặc định) */}
+      {!isMiniPlayerRight && hasTrack && <TabBarMiniPlayer isSearchRight={false} />}
+
+      {/* ── Pill Bar ── */}
       <View style={styles.pill}>
-        {/* Glass background */}
-        <BlurView intensity={30} tint='dark' experimentalBlurMethod='dimezisBlurView' style={StyleSheet.absoluteFillObject} />
+        <BlurView
+          intensity={30}
+          tint='dark'
+          experimentalBlurMethod='dimezisBlurView'
+          style={StyleSheet.absoluteFillObject}
+        />
         <View style={[StyleSheet.absoluteFillObject, styles.pillOverlay]} />
 
         {/* Sliding indicator */}
@@ -119,8 +144,8 @@ function PillTabBar({ state, navigation }: any) {
               transform: [
                 {
                   translateX: animValue.interpolate({
-                    inputRange: [0, 1, 2, 3],
-                    outputRange: [0, TAB_WIDTH, TAB_WIDTH * 2, TAB_WIDTH * 3]
+                    inputRange: PILL_TABS.map((_, i) => i),
+                    outputRange: PILL_TABS.map((_, i) => TAB_WIDTH * i)
                   })
                 }
               ]
@@ -128,7 +153,7 @@ function PillTabBar({ state, navigation }: any) {
           ]}
         />
 
-        {/* 4 tab items — cùng style */}
+        {/* Tab items */}
         {PILL_TABS.map((tabName) => {
           const route = state.routes.find((r: any) => r.name === tabName)
           if (!route) return null
@@ -154,7 +179,10 @@ function PillTabBar({ state, navigation }: any) {
           )
         })}
       </View>
-    </View>
+
+      {/* Mini Player circle — bên phải */}
+      {isMiniPlayerRight && hasTrack && <TabBarMiniPlayer isSearchRight={true} />}
+    </GestureHandlerRootView>
   )
 }
 
@@ -164,7 +192,8 @@ export default function TabLayout() {
   return (
     <Tabs tabBar={(props) => <PillTabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name='index' options={{ title: 'Trang chủ' }} />
-      <Tabs.Screen name='list' options={{ title: 'Danh sách' }} />
+      {/* Search tab ẩn khỏi tab bar — sẽ chuyển sang header Home */}
+      <Tabs.Screen name='list' options={{ title: 'Tìm kiếm', href: null }} />
       <Tabs.Screen name='library' options={{ title: 'Thư viện' }} />
       <Tabs.Screen name='downloads' options={{ title: 'Tải xuống' }} />
       <Tabs.Screen name='settings' options={{ title: 'Cài đặt' }} />
@@ -178,41 +207,13 @@ const styles = StyleSheet.create({
   outer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: SEARCH_GAP,
+    gap: CIRCLE_GAP,
     paddingTop: 12,
     paddingHorizontal: OUTER_H_PAD,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0
-  },
-
-  // ── Search Circle ──
-  searchCircle: {
-    width: SEARCH_SIZE,
-    height: SEARCH_SIZE,
-    borderRadius: SEARCH_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    shadowColor: '#B026FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6
-  },
-  searchActive: {
-    borderColor: 'rgba(176, 38, 255, 0.4)'
-  },
-  searchOverlay: {
-    backgroundColor: 'rgba(20, 15, 45, 0.6)',
-    borderRadius: SEARCH_SIZE / 2
-  },
-  searchHighlight: {
-    backgroundColor: 'rgba(176, 38, 255, 0.15)',
-    borderRadius: SEARCH_SIZE / 2
   },
 
   // ── Pill ──
@@ -247,7 +248,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(176, 38, 255, 0.12)'
   },
 
-  // ── Tab Item (đồng nhất cho cả 4) ──
+  // ── Tab Item ──
   tabItem: {
     flex: 1,
     alignItems: 'center',

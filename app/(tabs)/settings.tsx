@@ -158,8 +158,8 @@ export default function SettingsScreen() {
               />
               <SettingItem
                 icon={<ArrowLeftRight size={20} color={MOOD_BEAT_COLORS.accent} />}
-                title='Nút tìm kiếm bên phải'
-                subtitle={searchPosition === 'right' ? 'Đang ở bên phải' : 'Đang ở bên trái'}
+                title='Mini Player bên phải'
+                subtitle={searchPosition === 'right' ? 'Đang ở bên phải' : 'Đang ở bên trái (mặc định)'}
                 rightElement={
                   <Switch
                     value={searchPosition === 'right'}
