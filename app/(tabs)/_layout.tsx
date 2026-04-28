@@ -105,85 +105,85 @@ function PillTabBar({ state, navigation }: any) {
   }
 
   /**
-   * Layout:
-   * - isMiniPlayerRight=false (mặc định): MiniPlayer(trái) + Pill
-   * - isMiniPlayerRight=true:             Pill + MiniPlayer(phải)
-   * - Không có track:                     chỉ Pill (full width)
-   */
+    * Layout:
+    * - Flex row: [Spacer(trái)] + [Pill] hoặc [Pill] + [Spacer(phải)]
+    * - Mini Player nằm absolute đè lên, khi expand phủ kín pill bar
+    * - Không có track: chỉ Pill (full width)
+    */
 
-  return (
-    <GestureHandlerRootView
-      style={[
-        styles.outer,
-        {
-          paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24,
-          flexDirection: isMiniPlayerRight ? 'row' : 'row'
-        }
-      ]}
-    >
-      {/* Mini Player circle — bên trái (mặc định) */}
-      {!isMiniPlayerRight && hasTrack && <TabBarMiniPlayer isSearchRight={false} />}
+   return (
+     <GestureHandlerRootView
+       style={[
+         styles.outer,
+         { paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 24 }
+       ]}
+     >
+       {/* Spacer giữ chỗ circle ở bên trái (mặc định) */}
+       {!isMiniPlayerRight && hasTrack && <View style={styles.circleSpacer} />}
 
-      {/* ── Pill Bar ── */}
-      <View style={styles.pill}>
-        <BlurView
-          intensity={30}
-          tint='dark'
-          experimentalBlurMethod='dimezisBlurView'
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={[StyleSheet.absoluteFillObject, styles.pillOverlay]} />
+       {/* ── Pill Bar ── */}
+       <View style={styles.pill}>
+         <BlurView
+           intensity={30}
+           tint='dark'
+           experimentalBlurMethod='dimezisBlurView'
+           style={StyleSheet.absoluteFillObject}
+         />
+         <View style={[StyleSheet.absoluteFillObject, styles.pillOverlay]} />
 
-        {/* Sliding indicator */}
-        <Animated.View
-          style={[
-            styles.indicator,
-            {
-              width: TAB_WIDTH,
-              opacity: indicatorOp,
-              transform: [
-                {
-                  translateX: animValue.interpolate({
-                    inputRange: PILL_TABS.map((_, i) => i),
-                    outputRange: PILL_TABS.map((_, i) => TAB_WIDTH * i)
-                  })
-                }
-              ]
-            }
-          ]}
-        />
+         {/* Sliding indicator */}
+         <Animated.View
+           style={[
+             styles.indicator,
+             {
+               width: TAB_WIDTH,
+               opacity: indicatorOp,
+               transform: [{
+                 translateX: animValue.interpolate({
+                   inputRange: PILL_TABS.map((_, i) => i),
+                   outputRange: PILL_TABS.map((_, i) => TAB_WIDTH * i)
+                 })
+               }]
+             }
+           ]}
+         />
 
-        {/* Tab items */}
-        {PILL_TABS.map((tabName) => {
-          const route = state.routes.find((r: any) => r.name === tabName)
-          if (!route) return null
+         {/* Tab items */}
+         {PILL_TABS.map((tabName) => {
+           const route = state.routes.find((r: any) => r.name === tabName)
+           if (!route) return null
 
-          const isFocused = currentName === tabName
-          const cfg = TAB_CONFIG[tabName]
-          const color = isFocused ? COLORS.primary : COLORS.textMuted
+           const isFocused = currentName === tabName
+           const cfg = TAB_CONFIG[tabName]
+           const color = isFocused ? COLORS.primary : COLORS.textMuted
 
-          return (
-            <Pressable
-              key={route.key}
-              onPress={() => goTo(tabName)}
-              style={styles.tabItem}
-              accessibilityRole='button'
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={cfg.label}
-            >
-              <cfg.Icon size={20} color={color} strokeWidth={isFocused ? 2.5 : 1.8} />
-              <Text style={[styles.tabLabel, { color, fontWeight: isFocused ? '700' : '500' }]} numberOfLines={1}>
-                {cfg.label}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </View>
+           return (
+             <Pressable
+               key={route.key}
+               onPress={() => goTo(tabName)}
+               style={styles.tabItem}
+               accessibilityRole='button'
+               accessibilityState={isFocused ? { selected: true } : {}}
+               accessibilityLabel={cfg.label}
+             >
+               <cfg.Icon size={20} color={color} strokeWidth={isFocused ? 2.5 : 1.8} />
+               <Text style={[styles.tabLabel, { color, fontWeight: isFocused ? '700' : '500' }]} numberOfLines={1}>
+                 {cfg.label}
+               </Text>
+             </Pressable>
+           )
+         })}
+       </View>
 
-      {/* Mini Player circle — bên phải */}
-      {isMiniPlayerRight && hasTrack && <TabBarMiniPlayer isSearchRight={true} />}
-    </GestureHandlerRootView>
-  )
+       {/* Spacer giữ chỗ circle ở bên phải */}
+       {isMiniPlayerRight && hasTrack && <View style={styles.circleSpacer} />}
+
+       {/* Mini Player — absolute, đè lên pill khi expand */}
+       {hasTrack && (
+         <TabBarMiniPlayer isSearchRight={isMiniPlayerRight} />
+       )}
+     </GestureHandlerRootView>
+   )
 }
 
 // ─── Tab Layout ──────────────────────────────────────────────────────────────
@@ -214,6 +214,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0
+  },
+
+  // Spacer giữ chỗ circle trong flex row
+  circleSpacer: {
+    width: CIRCLE_SIZE,
+    height: PILL_HEIGHT
   },
 
   // ── Pill ──

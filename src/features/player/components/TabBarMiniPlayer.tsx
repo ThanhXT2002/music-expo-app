@@ -18,11 +18,13 @@ import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withTiming,
   interpolate,
   Extrapolation
 } from 'react-native-reanimated'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { Play, Pause, SkipBack, SkipForward } from 'lucide-react-native'
+import TextTicker from 'react-native-text-ticker'
 import { usePlayerStore } from '../store/playerStore'
 import { usePlayer } from '../hooks/usePlayer'
 import { SpinningDisc } from '@shared/components/SpinningDisc'
@@ -35,9 +37,9 @@ import { COLORS } from '@shared/constants/colors'
 /** Kích thước circle khi thu gọn */
 const CIRCLE_SIZE = 64
 /** Kích thước thumbnail bên trong circle */
-const THUMB_COLLAPSED = 48
+const THUMB_COLLAPSED = 56
 /** Kích thước thumbnail khi mở rộng */
-const THUMB_EXPANDED = 36
+const THUMB_EXPANDED = 48
 /** Pill height */
 const PILL_HEIGHT = 64
 /** Khoảng kéo để trigger expand (px) */
@@ -68,6 +70,8 @@ interface TabBarMiniPlayerProps {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+const AnimatedPressable = Reanimated.createAnimatedComponent(Pressable)
+
 /**
  * Mini Player widget tích hợp vào bottom tab bar.
  *
@@ -79,18 +83,25 @@ interface TabBarMiniPlayerProps {
  */
 export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
   const currentTrack = usePlayerStore((s) => s.currentTrack)
-  const { isPlaying, progress, currentTime, duration, play, pause, next, previous } = usePlayer()
+  const { isPlaying, currentTime, duration, play, pause, next, previous } = usePlayer()
   const router = useRouter()
 
   // 0 = collapsed, 1 = expanded
   const expandProgress = useSharedValue(0)
+  // Animation value cho click overlay flash
+  const clickOpacity = useSharedValue(0)
 
   // ── Derived values ──
   const coverUrl = currentTrack?.coverUrl || ''
+  const progress = currentTrack ? currentTime / currentTrack.durationSeconds : 0
   const remainingTime = duration - currentTime
 
   // ── Handlers ──
   const handlePlayPause = useCallback(async () => {
+    // Flash effect khi click (hiện rõ 1s rồi mờ dần về 0)
+    clickOpacity.value = 1
+    clickOpacity.value = withTiming(0, { duration: 1000 })
+
     if (isPlaying) await pause()
     else await play()
   }, [isPlaying, play, pause])
@@ -108,7 +119,9 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
         .activeOffsetX([-15, 15])
         .onUpdate((e) => {
           'worklet'
-          const translation = isSearchRight ? e.translationX : -e.translationX
+          // Mini player ở trái → kéo PHẢI (translationX > 0) về phía pill để expand
+          // Mini player ở phải → kéo TRÁI (translationX < 0) về phía pill để expand
+          const translation = isSearchRight ? -e.translationX : e.translationX
           const normalized = Math.max(0, Math.min(translation / DRAG_THRESHOLD, 1))
           expandProgress.value = normalized
         })
@@ -131,10 +144,21 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
     return { width, borderRadius }
   })
 
-  // Thumbnail size: thu nhỏ khi expand
+  // Thumbnail size: thu nhỏ bằng scale để không bị tràn layout (gây lệch tâm)
   const thumbStyle = useAnimatedStyle(() => {
-    const size = interpolate(expandProgress.value, [0, 1], [THUMB_COLLAPSED, THUMB_EXPANDED], Extrapolation.CLAMP)
-    return { width: size, height: size, borderRadius: size / 2 }
+    const scale = interpolate(expandProgress.value, [0, 1], [1, THUMB_EXPANDED / THUMB_COLLAPSED], Extrapolation.CLAMP)
+    const margin = interpolate(
+      expandProgress.value,
+      [0, 1],
+      [0, (THUMB_EXPANDED - THUMB_COLLAPSED) / 2],
+      Extrapolation.CLAMP
+    )
+    return {
+      width: THUMB_COLLAPSED,
+      height: THUMB_COLLAPSED,
+      transform: [{ scale }]
+      // marginHorizontal: margin
+    }
   })
 
   /**
@@ -143,31 +167,46 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
    * Khi expanded (progress=1): width tự nhiên, opacity=1.
    * overflow: 'hidden' đảm bảo nội dung bị clip khi width thu hẹp.
    */
-  const expandedControlStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(expandProgress.value, [0.5, 1], [0, 1], Extrapolation.CLAMP),
-    maxWidth: interpolate(expandProgress.value, [0, 0.5], [0, 40], Extrapolation.CLAMP),
-    overflow: 'hidden' as const,
-    marginHorizontal: interpolate(expandProgress.value, [0, 0.5], [0, 4], Extrapolation.CLAMP)
-  }))
+  const expandedControlStyle = useAnimatedStyle(() => {
+    const display = expandProgress.value < 0.01 ? 'none' : 'flex'
+    return {
+      display,
+      opacity: expandProgress.value,
+      width: interpolate(expandProgress.value, [0, 1], [0, 32], Extrapolation.CLAMP),
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  })
 
-  const expandedInfoStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(expandProgress.value, [0.5, 1], [0, 1], Extrapolation.CLAMP),
-    flex: expandProgress.value > 0.3 ? 1 : 0,
-    maxWidth: interpolate(expandProgress.value, [0, 0.5], [0, 500], Extrapolation.CLAMP),
-    overflow: 'hidden' as const,
-    marginLeft: interpolate(expandProgress.value, [0, 0.5], [0, 4], Extrapolation.CLAMP)
-  }))
+  const expandedInfoStyle = useAnimatedStyle(() => {
+    const display = expandProgress.value < 0.01 ? 'none' : 'flex'
+    return {
+      display,
+      flex: interpolate(expandProgress.value, [0, 1], [0, 1], Extrapolation.CLAMP),
+      maxWidth: interpolate(expandProgress.value, [0, 1], [0, 500], Extrapolation.CLAMP),
+      opacity: expandProgress.value,
+      marginLeft: interpolate(expandProgress.value, [0, 1], [0, 4], Extrapolation.CLAMP),
+      overflow: 'hidden',
+      justifyContent: 'center'
+    }
+  })
 
-  const expandedTimerStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(expandProgress.value, [0.5, 1], [0, 1], Extrapolation.CLAMP),
-    maxWidth: interpolate(expandProgress.value, [0, 0.5], [0, 50], Extrapolation.CLAMP),
-    overflow: 'hidden' as const,
-    marginRight: interpolate(expandProgress.value, [0, 0.5], [0, 4], Extrapolation.CLAMP)
-  }))
+  const expandedTimerStyle = useAnimatedStyle(() => {
+    const display = expandProgress.value < 0.01 ? 'none' : 'flex'
+    return {
+      display,
+      opacity: expandProgress.value,
+      maxWidth: interpolate(expandProgress.value, [0, 1], [0, 100], Extrapolation.CLAMP),
+      overflow: 'hidden',
+      alignItems: 'flex-end',
+      justifyContent: 'center'
+    }
+  })
 
-  // Play/Pause overlay — ẩn khi expand
+  // Play/Pause overlay — mặc định ẩn (0), hiện rõ (1) trong 1s khi click
   const circleOverlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(expandProgress.value, [0, 0.3], [1, 0], Extrapolation.CLAMP)
+    opacity: clickOpacity.value
   }))
 
   // Circular progress — ẩn khi expand
@@ -185,20 +224,28 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
 
   return (
     <GestureDetector gesture={panGesture}>
-      <Reanimated.View style={[styles.container, containerStyle]}>
+      <Reanimated.View
+        style={[
+          styles.container,
+          containerStyle,
+          // Vị trí absolute: trùng spacer khi collapsed, đè pill khi expand
+          isSearchRight ? { right: OUTER_H_PAD } : { left: OUTER_H_PAD }
+        ]}
+      >
         {/* Glass background */}
         <View style={[StyleSheet.absoluteFillObject, styles.glass]} />
 
         {/* Circular progress (collapsed) */}
-        <Reanimated.View style={[StyleSheet.absoluteFill, circularProgressOpacity]} pointerEvents='none'>
-          <CircularProgress size={CIRCLE_SIZE} progress={progress} strokeWidth={3}>
-            <View />
-          </CircularProgress>
+        <Reanimated.View
+          style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, circularProgressOpacity]}
+          pointerEvents='none'
+        >
+          <CircularProgress size={CIRCLE_SIZE} progress={progress} strokeWidth={2.5} />
         </Reanimated.View>
 
         {/* Pill progress border (expanded) */}
         <Reanimated.View style={[StyleSheet.absoluteFill, pillProgressOpacity]} pointerEvents='none'>
-          <PillProgressBorder width={FULL_WIDTH} height={PILL_HEIGHT} progress={progress} strokeWidth={2.5} />
+          <PillProgressBorder width={FULL_WIDTH} height={PILL_HEIGHT} progress={progress} strokeWidth={3} />
         </Reanimated.View>
 
         {/* ── Content Row ── */}
@@ -211,16 +258,14 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
           </Reanimated.View>
 
           {/* Thumbnail — luôn hiện, luôn ở giữa khi collapsed */}
-          <Pressable onPress={handlePlayPause} style={styles.thumbWrapper}>
-            <Reanimated.View style={thumbStyle}>
-              <SpinningDisc
-                uri={coverUrl}
-                isPlaying={isPlaying}
-                size={THUMB_COLLAPSED}
-                showHole={false}
-                showGlow={false}
-              />
-            </Reanimated.View>
+          <AnimatedPressable onPress={handlePlayPause} style={[styles.thumbWrapper, thumbStyle]}>
+            <SpinningDisc
+              uri={coverUrl}
+              isPlaying={isPlaying}
+              size={THUMB_COLLAPSED}
+              showHole={false}
+              showGlow={false}
+            />
 
             {/* Play/Pause overlay (collapsed) */}
             <Reanimated.View style={[styles.playOverlay, circleOverlayStyle]}>
@@ -230,7 +275,7 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
                 <Play size={20} color='#FFFFFF' fill='#FFFFFF' />
               )}
             </Reanimated.View>
-          </Pressable>
+          </AnimatedPressable>
 
           {/* Next button — width=0 khi collapsed */}
           <Reanimated.View style={expandedControlStyle}>
@@ -242,9 +287,9 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
           {/* Song info — flex=0, width=0 khi collapsed */}
           <Reanimated.View style={expandedInfoStyle}>
             <Pressable onPress={handleTapExpanded}>
-              <Text style={styles.songTitle} numberOfLines={1}>
+              <TextTicker style={styles.songTitle} duration={8000} loop bounce repeatSpacer={50} marqueeDelay={1000}>
                 {currentTrack.title}
-              </Text>
+              </TextTicker>
               <Text style={styles.songArtist} numberOfLines={1}>
                 {currentTrack.artist}
               </Text>
@@ -265,29 +310,30 @@ export function TabBarMiniPlayer({ isSearchRight }: TabBarMiniPlayerProps) {
 
 const styles = StyleSheet.create({
   container: {
+    // Absolute — đè lên pill bar khi expand, trùng spacer khi collapsed
+    position: 'absolute',
+    top: 12,
     height: PILL_HEIGHT,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
-    shadowColor: '#B026FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 8
+    boxShadow: '0px 0px 16px rgba(176, 38, 255, 0.7)',
+    zIndex: 10
   },
   glass: {
-    backgroundColor: 'rgba(20, 15, 45, 0.7)',
+    // Đậm (0.92) để phủ kín pill bar bên dưới khi expand
+    backgroundColor: 'rgba(18, 12, 40, 0.92)',
     borderRadius: 100
   },
   contentRow: {
     flex: 1,
+    height: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    // justifyContent: center → thumbnail nằm giữa khi collapsed
-    // vì các expanded items có width=0 → không chiếm space
     justifyContent: 'center'
   },
   thumbWrapper: {
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -318,8 +364,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: COLORS.textMuted,
-    paddingRight: 4,
-    // Đảm bảo text không bị co lại
+    paddingRight: 12,
+    paddingLeft: 12,
     minWidth: 40,
     textAlign: 'right'
   }

@@ -22,6 +22,7 @@ import { formatDuration } from '@shared/utils/formatDuration'
 import type { Track } from '@shared/types/track'
 import { useTrackActions } from '@shared/hooks/useTrackActions'
 import { useFavoriteIds } from '@features/library/hooks/useFavorites'
+import { usePlayerStore } from '@features/player/store/playerStore'
 import React, { useEffect, useState } from 'react'
 
 interface TrackListItemProps {
@@ -53,22 +54,27 @@ interface TrackListItemProps {
 
 /** Component ảnh bìa xoay tròn chỉ render khi bài hát đang phát để tối ưu hiệu năng */
 function ActiveTrackCover({ uri }: { uri: string }) {
+  const isPlaying = usePlayerStore((s) => s.isPlaying)
   const rotation = useSharedValue(0)
 
   useEffect(() => {
-    rotation.value = withRepeat(
-      withTiming(rotation.value + 360, {
-        duration: 6000,
-        easing: ReanimatedEasing.linear
-      }),
-      -1,
-      false
-    )
+    if (isPlaying) {
+      rotation.value = withRepeat(
+        withTiming(rotation.value + 360, {
+          duration: 6000,
+          easing: ReanimatedEasing.linear
+        }),
+        -1,
+        false
+      )
+    } else {
+      cancelAnimation(rotation)
+    }
 
     return () => {
       cancelAnimation(rotation)
     }
-  }, [rotation])
+  }, [rotation, isPlaying])
 
   const animatedStyle = useAnimatedStyle(() => {
     const currentRotation = Number.isFinite(rotation.value) ? rotation.value : 0

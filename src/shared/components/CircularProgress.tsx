@@ -100,7 +100,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   svg: {
-    position: 'absolute'
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: '-50%' }, { translateY: '-50%' }]
   },
   content: {
     alignItems: 'center',

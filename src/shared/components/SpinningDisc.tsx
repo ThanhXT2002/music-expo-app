@@ -39,13 +39,7 @@ interface SpinningDiscProps {
  * Đĩa than xoay tròn với thumbnail ở giữa.
  * Tái sử dụng cho cả PlayerScreen (lớn) và TabBar Mini Player (nhỏ).
  */
-export function SpinningDisc({
-  uri,
-  isPlaying,
-  size,
-  showHole = true,
-  showGlow = true
-}: SpinningDiscProps) {
+export function SpinningDisc({ uri, isPlaying, size, showHole = true, showGlow = true }: SpinningDiscProps) {
   const rotation = useSharedValue(0)
 
   useEffect(() => {
@@ -69,22 +63,14 @@ export function SpinningDisc({
     transform: [{ rotate: `${rotation.value}deg` }]
   }))
 
-  const holeSize = Math.max(size * 0.18, 12)
+  const holeSize = Math.max(size * 0.08, 12)
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       {/* Shadow glow */}
-      {showGlow && (
-        <View style={[styles.glow, { width: size + 20, height: size + 20 }]} />
-      )}
+      {showGlow && <View style={[styles.glow, { width: size + 20, height: size + 20 }]} />}
 
-      <Reanimated.View
-        style={[
-          styles.disc,
-          { width: size, height: size, borderRadius: size / 2 },
-          animatedStyle
-        ]}
-      >
+      <Reanimated.View style={[styles.disc, { width: size, height: size, borderRadius: size / 2 }, animatedStyle]}>
         <Image
           source={{ uri }}
           style={[styles.image, { width: size, height: size, borderRadius: size / 2 }]}
@@ -135,7 +121,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
   image: {
-    position: 'absolute'
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: '-50%' }, { translateY: '-50%' }]
   },
   hole: {
     backgroundColor: '#1A1030',

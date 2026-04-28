@@ -45,9 +45,12 @@ export function PillProgressBorder({
   trackColor = 'rgba(255, 255, 255, 0.08)'
 }: PillProgressBorderProps) {
   // Tính chu vi rounded rect (xấp xỉ)
-  const rx = Math.min(borderRadius, height / 2)
-  const straightH = Math.max(width - 2 * rx, 0)
-  const straightV = Math.max(height - 2 * rx, 0)
+  // Bán kính góc thực tế sau khi trừ đi stroke offset
+  const rx = Math.max((Math.min(borderRadius, height / 2)) - strokeWidth / 2, 0)
+  
+  // Chiều dài đoạn thẳng ngang và dọc
+  const straightH = Math.max(width - strokeWidth - 2 * rx, 0)
+  const straightV = Math.max(height - strokeWidth - 2 * rx, 0)
   const cornerArc = Math.PI * rx / 2
 
   // Tổng chu vi = 4 cung góc + 2 cạnh ngang + 2 cạnh dọc
@@ -56,9 +59,9 @@ export function PillProgressBorder({
   const clampedProgress = Math.min(Math.max(progress, 0), 1)
   const dashOffset = perimeter * (1 - clampedProgress)
 
-  // Offset SVG để stroke không bị cắt
-  const svgWidth = width + strokeWidth
-  const svgHeight = height + strokeWidth
+  // Không cần offset Svg width lớn hơn nữa nếu ta vẽ thụt vào trong
+  const svgWidth = width
+  const svgHeight = height
 
   return (
     <View style={[StyleSheet.absoluteFill, styles.container]} pointerEvents='none'>
@@ -67,8 +70,8 @@ export function PillProgressBorder({
         <Rect
           x={strokeWidth / 2}
           y={strokeWidth / 2}
-          width={width}
-          height={height}
+          width={width - strokeWidth}
+          height={height - strokeWidth}
           rx={rx}
           ry={rx}
           stroke={trackColor}
@@ -80,8 +83,8 @@ export function PillProgressBorder({
         <Rect
           x={strokeWidth / 2}
           y={strokeWidth / 2}
-          width={width}
-          height={height}
+          width={width - strokeWidth}
+          height={height - strokeWidth}
           rx={rx}
           ry={rx}
           stroke={progressColor}
