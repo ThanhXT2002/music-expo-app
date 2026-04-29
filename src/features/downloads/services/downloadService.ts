@@ -106,12 +106,17 @@ export async function searchCompletedSongs(keyword: string, limit: number = 20):
 
 /**
  * Tải file MP3 từ server về thiết bị và lưu record vào SQLite.
+ * Sau khi hoàn tất, invalidate React Query cache để UI tự động cập nhật.
  *
  * @param songInfo - Metadata bài hát
  * @param onProgress - Callback tiến trình tải (0–1)
  * @returns Đường dẫn file local đã tải
  */
-export async function downloadAndSave(songInfo: SongInfo, onProgress?: (progress: number) => void): Promise<string> {
+export async function downloadAndSave(
+  songInfo: SongInfo,
+  onProgress?: (progress: number) => void,
+  queryClient?: any // QueryClient để invalidate cache
+): Promise<string> {
   logger.info('Bắt đầu tải file MP3', { id: songInfo.id, title: songInfo.title })
 
   // Kiểm tra đã tải trước đó
@@ -129,6 +134,12 @@ export async function downloadAndSave(songInfo: SongInfo, onProgress?: (progress
       duration: songInfo.duration
     })
     await saveDownloadHistory(songInfo.id)
+
+    // Invalidate cache để UI cập nhật
+    if (queryClient) {
+      queryClient.invalidateQueries({ queryKey: ['library', 'tracks'] })
+    }
+
     return path!
   }
 
@@ -149,6 +160,11 @@ export async function downloadAndSave(songInfo: SongInfo, onProgress?: (progress
     duration: songInfo.duration
   })
   await saveDownloadHistory(songInfo.id)
+
+  // Invalidate cache để UI cập nhật
+  if (queryClient) {
+    queryClient.invalidateQueries({ queryKey: ['library', 'tracks'] })
+  }
 
   logger.info('Tải và lưu thành công', { id: songInfo.id, filePath })
   return filePath

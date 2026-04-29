@@ -306,15 +306,19 @@ export default function HomeScreen() {
           <>
             {/* Banner nổi bật */}
             <MusicBannerCarousel
-              data={(feed?.featured ?? []).map((f) => ({
-                id: f.id,
-                title: f.title,
-                subtitle: f.subtitle,
-                imageUrl: f.imageUrl
-              }))}
+              data={(feed?.featured ?? []).map((f) => {
+                // Tìm track tương ứng từ recentlyPlayed
+                const track = feed?.recentlyPlayed.find((t) => f.id.includes(t.id))
+                return {
+                  id: f.id,
+                  title: f.title,
+                  subtitle: f.subtitle,
+                  imageUrl: f.imageUrl,
+                  track: track // Truyền track reference để xử lý download/favorite
+                }
+              })}
               onPress={(item) => {
-                const track = feed?.recentlyPlayed.find((t) => item.id.includes(t.id))
-                if (track) handlePlayTrack(track)
+                if (item.track) handlePlayTrack(item.track)
               }}
             />
 

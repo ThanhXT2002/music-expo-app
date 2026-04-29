@@ -72,7 +72,7 @@ export default function LibraryScreen() {
   const { tracks, isLoading, removeTrack } = useLibrary()
   const playerStore = usePlayerStore()
   const [activeTab, setActiveTab] = useState<LibraryTab>('tracks')
-  const { data: favoriteIds = [] } = useFavoriteIdsLocal() // Chỉ lấy từ local, không gọi API
+  const { data: favoriteIds = [] } = useFavoriteIdsLocal()
 
   // Lọc bài hát offline đã yêu thích
   const offlineFavoriteTracks = tracks.filter(t => favoriteIds.includes(t.id))

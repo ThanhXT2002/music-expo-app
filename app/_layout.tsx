@@ -25,6 +25,7 @@ import { COLORS } from '@shared/constants/colors'
 import { ONBOARDING_STORAGE_KEY } from './onboarding'
 import { AddToPlaylistModal } from '@features/playlist/components/AddToPlaylistModal'
 import { CreatePlaylistModal } from '@features/playlist/components/CreatePlaylistModal'
+import { setDownloadStoreQueryClient } from '@features/downloads/store/downloadStore'
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
@@ -34,6 +35,11 @@ import './global.css'
  * Layout gốc — bọc QueryClientProvider.
  */
 export default function RootLayout() {
+  // Set QueryClient cho downloadStore để có thể invalidate queries
+  useEffect(() => {
+    setDownloadStoreQueryClient(queryClient)
+  }, [])
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>

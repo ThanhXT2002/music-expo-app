@@ -12,6 +12,7 @@
  */
 
 import { create } from 'zustand'
+import { QueryClient } from '@tanstack/react-query'
 import { createLogger } from '@core/logger'
 import { getDownloadedSongs, type LocalSong } from '@core/data/database'
 import { getTotalDownloadSize } from '@core/storage/fileStorage'
@@ -26,6 +27,15 @@ import {
 import type { DownloadItem, SongInfo, ServerStatus } from '../types'
 
 const logger = createLogger('download-store')
+
+// ─── Global QueryClient Reference ───────────────────────────────────────────
+// Sẽ được set từ App root để store có thể invalidate queries
+let globalQueryClient: QueryClient | null = null
+
+export function setDownloadStoreQueryClient(client: QueryClient) {
+  globalQueryClient = client
+  logger.info('QueryClient đã được set cho downloadStore')
+}
 
 // ─── Store Interface ─────────────────────────────────────────────────────────
 
@@ -155,6 +165,13 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
 
       // 7. Refresh danh sách offline
       await get().loadOfflineSongs()
+
+      // 8. Invalidate React Query cache để UI tự động cập nhật
+      if (globalQueryClient) {
+        globalQueryClient.invalidateQueries({ queryKey: ['library', 'tracks'] })
+        logger.info('Đã invalidate library queries sau khi download')
+      }
+
       logger.info('Download hoàn tất', { id: songInfo.id, title: songInfo.title })
     } catch (error: any) {
       // Cập nhật task lỗi
@@ -238,6 +255,13 @@ export const useDownloadStore = create<DownloadState>((set, get) => ({
 
       // 6. Refresh danh sách offline
       await get().loadOfflineSongs()
+
+      // 7. Invalidate React Query cache để UI tự động cập nhật
+      if (globalQueryClient) {
+        globalQueryClient.invalidateQueries({ queryKey: ['library', 'tracks'] })
+        logger.info('Đã invalidate library queries sau khi download')
+      }
+
       logger.info('Download bằng Track hoàn tất', { id: songInfo.id, title: songInfo.title })
     } catch (error: any) {
       updateTask(
