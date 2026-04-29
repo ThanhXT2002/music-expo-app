@@ -16,6 +16,8 @@ import { useLibrary } from '../hooks/useLibrary'
 import { usePlayerStore } from '@features/player/store/playerStore'
 import { usePlaylistStore } from '@features/playlist/store/playlistStore'
 import { useFavoriteIdsLocal } from '../hooks/useFavorites'
+import { useOfflineAlbums } from '../hooks/useOfflineAlbums'
+import { OfflineAlbumGrid } from './OfflineAlbumGrid'
 import * as AudioManager from '@core/audio/AudioManager'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing'
@@ -23,6 +25,7 @@ import { TrackListItem } from '@shared/components/TrackListItem'
 import { EmptyState } from '@shared/components/EmptyState'
 import type { LibraryTab } from '../types'
 import type { Track } from '@shared/types/track'
+import type { OfflineAlbum } from '../hooks/useOfflineAlbums'
 
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -73,6 +76,41 @@ export default function LibraryScreen() {
 
   // Lọc bài hát offline đã yêu thích
   const offlineFavoriteTracks = tracks.filter(t => favoriteIds.includes(t.id))
+
+  // Nhóm bài hát theo nghệ sĩ thành album
+  const offlineAlbums = useOfflineAlbums(tracks)
+
+  const handleAlbumPress = useCallback((album: OfflineAlbum) => {
+    if (album.tracks.length === 0) return
+
+    const currentTrack = playerStore.currentTrack
+    const isActiveAlbum = currentTrack
+      ? album.tracks.some((t) => t.id === currentTrack.id)
+      : false
+
+    // Nếu album đang active → chỉ navigate đến player, không restart
+    if (isActiveAlbum && currentTrack) {
+      safePush(`/player/${currentTrack.id}`)
+      // Nếu đang pause thì resume
+      if (AudioManager.getPlaybackState() === 'paused') {
+        AudioManager.play()
+      }
+      return
+    }
+
+    // Album chưa phát → set queue và phát bài đầu tiên
+    playerStore.setQueue(album.tracks)
+    playerStore.setCurrentTrack(album.tracks[0])
+    safePush(`/player/${album.tracks[0].id}`)
+    AudioManager.loadAndPlay({
+      id: album.tracks[0].id,
+      title: album.tracks[0].title,
+      artist: album.tracks[0].artist,
+      streamUrl: album.tracks[0].streamUrl || '',
+      coverUrl: album.tracks[0].coverUrl,
+      durationSeconds: album.tracks[0].durationSeconds
+    }).catch((err) => console.error('Lỗi phát nhạc từ Album:', err))
+  }, [playerStore, safePush])
 
   const handlePlayTrack = useCallback(
     async (track: Track) => {
@@ -182,8 +220,12 @@ export default function LibraryScreen() {
           />
         )}
 
-        {activeTab === 'albums' && (
-          <EmptyState icon='heart-outline' title='Chưa có dữ liệu' description='Tính năng này đang được phát triển.' />
+        {activeTab === 'albums' && offlineAlbums.length > 0 && (
+          <OfflineAlbumGrid albums={offlineAlbums} onPress={handleAlbumPress} />
+        )}
+
+        {activeTab === 'albums' && !isLoading && offlineAlbums.length === 0 && (
+          <EmptyState icon='disc' title='Chưa có album' description='Tải bài hát về máy để xem album tại đây.' />
         )}
 
         {/* Spacer cho TabBar và MiniPlayer */}

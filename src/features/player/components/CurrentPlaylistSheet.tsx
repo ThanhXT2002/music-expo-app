@@ -19,7 +19,7 @@ import Animated, {
   Extrapolation
 } from 'react-native-reanimated'
 import DraggableFlatList, { RenderItemParams, DragEndParams } from 'react-native-draggable-flatlist'
-import { Download, CheckCircle } from 'lucide-react-native'
+import { Download, Heart } from 'lucide-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { PlaylistHeader } from './PlaylistHeader'
 import { DraggableTrackItem } from './DraggableTrackItem'
@@ -28,6 +28,7 @@ import { usePlayerStore } from '../store/playerStore'
 import { EmptyState } from '@shared/components/EmptyState'
 import { useDownloadStore } from '@features/downloads/store/downloadStore'
 import { useTrackActions } from '@shared/hooks/useTrackActions'
+import { useFavoriteIdsLocal, useToggleFavoriteLocal } from '@features/library/hooks/useFavorites'
 import { COLORS } from '@shared/constants/colors'
 import { RADIUS, SPACING } from '@shared/constants/spacing'
 import type { Track } from '@shared/types/track'
@@ -65,7 +66,10 @@ export function CurrentPlaylistSheet() {
   // Kiểm tra bài hát hiện tại đã tải offline chưa
   const currentTrackId = store.currentTrack?.id
   const isDownloaded = useDownloadStore((s) => currentTrackId ? s.offlineSongs.some((song) => song.id === currentTrackId) : false)
-  const trackActions = useTrackActions(false)
+  const trackActions = useTrackActions()
+  const { data: favoriteIds = [] } = useFavoriteIdsLocal()
+  const toggleFavorite = useToggleFavoriteLocal()
+  const isFavorited = currentTrackId ? favoriteIds.includes(currentTrackId) : false
 
   const {
     queue,
@@ -220,10 +224,18 @@ export function CurrentPlaylistSheet() {
                     >
                       <Download size={20} color='#FFFFFF' />
                     </Pressable>
-                  ) : isDownloaded ? (
-                    <View style={{ padding: 4, marginRight: 4 }}>
-                      <CheckCircle size={20} color={COLORS.success} />
-                    </View>
+                  ) : isDownloaded && store.currentTrack ? (
+                    <Pressable
+                      hitSlop={12}
+                      style={{ padding: 4, marginRight: 4 }}
+                      onPress={() => toggleFavorite.mutate({ trackId: store.currentTrack!.id, isCurrentlyFavorited: isFavorited })}
+                    >
+                      <Heart
+                        size={20}
+                        color={isFavorited ? '#EF4444' : '#FFFFFF'}
+                        fill={isFavorited ? '#EF4444' : 'transparent'}
+                      />
+                    </Pressable>
                   ) : null
                 }
               />
