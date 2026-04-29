@@ -21,7 +21,7 @@ import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { formatDuration } from '@shared/utils/formatDuration'
 import type { Track } from '@shared/types/track'
 import { useTrackActions } from '@shared/hooks/useTrackActions'
-import { useFavoriteIds } from '@features/library/hooks/useFavorites'
+import { useFavoriteIdsLocal, useToggleFavoriteLocal } from '@features/library/hooks/useFavorites'
 import { usePlayerStore } from '@features/player/store/playerStore'
 import React, { useEffect, useState } from 'react'
 
@@ -122,10 +122,21 @@ export function TrackListItem({
   showDuration = true
 }: TrackListItemProps) {
   const [isActionMode, setIsActionMode] = useState(false)
-  const { data: favoriteIds = [] } = useFavoriteIds()
+  const { data: favoriteIds = [] } = useFavoriteIdsLocal()
+  const toggleFavorite = useToggleFavoriteLocal()
   const isFavorited = favoriteIds.includes(track.id)
-  
-  const defaultActions = useTrackActions(isFavorited)
+
+  const defaultActions = useTrackActions()
+
+  const handleToggleFavorite = (e: any) => {
+    e.stopPropagation()
+    setIsActionMode(false)
+    if (onFavorite) {
+      onFavorite(track)
+    } else {
+      toggleFavorite.mutate({ trackId: track.id, isCurrentlyFavorited: isFavorited })
+    }
+  }
 
   const handleAction = (action?: (track: Track) => void, fallbackAction?: (track: Track) => void) => {
     return (e: any) => {
@@ -162,19 +173,19 @@ export function TrackListItem({
               >
                 <X size={20} color="#FFFFFF" />
               </Pressable>
-              
+
               <View style={{ flex: 1 }} />
-              
+
               {track.isDownloaded ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Pressable onPress={handleAction(onPlaylist, defaultActions.onPlaylist)} style={styles.actionBtn}>
                     <ListMusic size={20} color="#FFFFFF" />
                   </Pressable>
-                  <Pressable onPress={handleAction(onFavorite, defaultActions.onFavorite)} style={styles.actionBtn}>
-                    <Heart 
-                      size={20} 
-                      color={isFavorited ? '#EF4444' : '#FFFFFF'} 
-                      fill={isFavorited ? '#EF4444' : 'transparent'} 
+                  <Pressable onPress={handleToggleFavorite} style={styles.actionBtn}>
+                    <Heart
+                      size={20}
+                      color={isFavorited ? '#EF4444' : '#FFFFFF'}
+                      fill={isFavorited ? '#EF4444' : 'transparent'}
                     />
                   </Pressable>
                   <Pressable onPress={handleAction(onDelete)} style={styles.actionBtn}>
@@ -331,7 +342,7 @@ const styles = StyleSheet.create({
   actionBtn: {
     padding: SPACING.sm,
   },
-  
+
   // Overlay Layer (khi track chưa tải)
   fullOverlay: {
     ...StyleSheet.absoluteFillObject,

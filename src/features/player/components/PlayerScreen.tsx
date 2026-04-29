@@ -14,9 +14,9 @@
  * @module features/player
  */
 
-import { View, Pressable, StyleSheet, Dimensions, Animated, Easing, Text, ActivityIndicator } from 'react-native'
+import { View, Pressable, StyleSheet, Dimensions, Text, ActivityIndicator } from 'react-native'
 
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
@@ -33,7 +33,6 @@ import {
   Shuffle,
   Repeat,
   Repeat1,
-  MessageSquareText,
   Menu,
   Download
 } from 'lucide-react-native'
@@ -44,7 +43,7 @@ import { ProgressBar } from './ProgressBar'
 import { CurrentPlaylistSheet } from './CurrentPlaylistSheet'
 import { useDownloadStore } from '@features/downloads/store/downloadStore'
 import { useTrackActions } from '@shared/hooks/useTrackActions'
-import { useFavoriteIds } from '@features/library/hooks/useFavorites'
+import { useFavoriteIdsLocal, useToggleFavoriteLocal } from '@features/library/hooks/useFavorites'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 
@@ -104,10 +103,11 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
 
   const isDownloaded = useDownloadStore((state) => state.offlineSongs.some((s) => s.id === trackId))
 
-  // Actions cho 3 nút: Playlist, Download, Favorite
-  const { data: favoriteIds = [] } = useFavoriteIds()
+  // Chỉ hiển thị Heart khi bài đã tải về — dùng local favorites
+  const { data: favoriteIds = [] } = useFavoriteIdsLocal()
+  const toggleFavorite = useToggleFavoriteLocal()
   const isFavorited = currentTrack ? favoriteIds.includes(currentTrack.id) : false
-  const trackActions = useTrackActions(isFavorited)
+  const trackActions = useTrackActions()
 
   const openPlaylist = usePlayerStore((s) => s.openCurrentPlaylist)
 
@@ -170,13 +170,19 @@ export default function PlayerScreen({ trackId }: PlayerScreenProps) {
           <ListMusic size={22} color={COLORS.textSecondary} />
         </Pressable>
         <View style={styles.actionRight}>
+          {/* Bài chưa tải → hiện Download */}
           {!isDownloaded && currentTrack && (
             <Pressable style={styles.actionBtn} hitSlop={8} onPress={() => trackActions.onDownload(currentTrack)}>
               <Download size={22} color={COLORS.textSecondary} />
             </Pressable>
           )}
-          {currentTrack && (
-            <Pressable style={styles.actionBtn} hitSlop={8} onPress={() => trackActions.onFavorite(currentTrack)}>
+          {/* Bài đã tải → hiện Heart để toggle favorite */}
+          {isDownloaded && currentTrack && (
+            <Pressable
+              style={styles.actionBtn}
+              hitSlop={8}
+              onPress={() => toggleFavorite.mutate({ trackId: currentTrack.id, isCurrentlyFavorited: isFavorited })}
+            >
               <Heart
                 size={22}
                 color={isFavorited ? '#EF4444' : COLORS.textSecondary}

@@ -15,7 +15,7 @@ import { useSafePush } from '@core/hooks/useSafePush'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePlayerStore } from '@features/player/store/playerStore'
 import { usePlaylistStore } from '@features/playlist/store/playlistStore'
-import { useFavoriteIds } from '../hooks/useFavorites'
+import { useFavoriteIdsLocal } from '../hooks/useFavorites'
 import * as AudioManager from '@core/audio/AudioManager'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing'
@@ -69,7 +69,10 @@ export default function LibraryScreen() {
   const { tracks, isLoading, removeTrack } = useLibrary()
   const playerStore = usePlayerStore()
   const [activeTab, setActiveTab] = useState<LibraryTab>('tracks')
-  const { data: favoriteIds = [] } = useFavoriteIds()
+  const { data: favoriteIds = [] } = useFavoriteIdsLocal() // Chỉ lấy từ local, không gọi API
+
+  // Lọc bài hát offline đã yêu thích
+  const offlineFavoriteTracks = tracks.filter(t => favoriteIds.includes(t.id))
 
   const handlePlayTrack = useCallback(
     async (track: Track) => {
@@ -147,9 +150,9 @@ export default function LibraryScreen() {
           </View>
         )}
 
-        {activeTab === 'favorites' && tracks.filter(t => favoriteIds.includes(t.id)).length > 0 && (
+        {activeTab === 'favorites' && offlineFavoriteTracks.length > 0 && (
           <View style={styles.listSection}>
-            {tracks.filter(t => favoriteIds.includes(t.id)).map((track) => (
+            {offlineFavoriteTracks.map((track) => (
               <TrackListItem
                 key={track.id}
                 track={{ ...track, isDownloaded: true }}
@@ -171,11 +174,11 @@ export default function LibraryScreen() {
           />
         )}
 
-        {activeTab === 'favorites' && !isLoading && tracks.filter(t => favoriteIds.includes(t.id)).length === 0 && (
+        {activeTab === 'favorites' && !isLoading && offlineFavoriteTracks.length === 0 && (
           <EmptyState
             icon='heart-outline'
-            title='Chưa có bài hát yêu thích'
-            description='Bạn chưa thêm bài hát offline nào vào danh sách yêu thích.'
+            title='Chưa có bài hát yêu thích offline'
+            description='Hãy tải bài hát về máy và thêm vào yêu thích để xem ở đây.'
           />
         )}
 
