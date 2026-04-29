@@ -5,10 +5,10 @@
  */
 
 import { View, ScrollView, Pressable, StyleSheet, Text, Switch, Alert } from 'react-native'
-import { BlurView } from 'expo-blur'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowLeft, Fingerprint, Lock, Trash2, EyeOff } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { GlassCard } from '@shared/components/GlassCard'
@@ -25,7 +25,7 @@ const MOOD_BEAT_COLORS = {
 export default function PrivacySettingsScreen() {
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  
+
   const [faceId, setFaceId] = useState(false)
   const [privatePlaylist, setPrivatePlaylist] = useState(true)
   const [analytics, setAnalytics] = useState(false)
@@ -47,13 +47,11 @@ export default function PrivacySettingsScreen() {
         colors={['rgba(255, 0, 122, 0.15)', 'transparent']}
         style={styles.ambientGlow}
       />
-      
+
       <View style={[styles.headerRow, { paddingTop: insets.top + SPACING.md }]}>
-        <Pressable style={styles.backBtnWrapper} onPress={() => router.back()}>
-          <BlurView intensity={20} tint="dark" style={styles.backBtn}>
-            <ArrowLeft size={22} color={COLORS.textPrimary} />
-          </BlurView>
-        </Pressable>
+        <GlassIconButton size={44} onPress={() => router.back()}>
+          <ArrowLeft size={22} color={COLORS.textPrimary} />
+        </GlassIconButton>
         <Text style={styles.headerTitle}>Quyền riêng tư</Text>
         <View style={{ width: 44 }} />
       </View>
@@ -69,11 +67,11 @@ export default function PrivacySettingsScreen() {
               <Text style={styles.toggleTitle}>Mở khóa bằng sinh trắc</Text>
               <Text style={styles.toggleSubtitle}>Sử dụng Face ID hoặc Vân tay</Text>
             </View>
-            <Switch 
-              value={faceId} 
+            <Switch
+              value={faceId}
               onValueChange={setFaceId}
-              trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }} 
-              thumbColor="#FFFFFF" 
+              trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }}
+              thumbColor="#FFFFFF"
             />
           </View>
         </GlassCard>
@@ -88,11 +86,11 @@ export default function PrivacySettingsScreen() {
               <Text style={styles.toggleTitle}>Ẩn Playlist cá nhân</Text>
               <Text style={styles.toggleSubtitle}>Không hiển thị ở trang cá nhân công khai</Text>
             </View>
-            <Switch 
-              value={privatePlaylist} 
+            <Switch
+              value={privatePlaylist}
               onValueChange={setPrivatePlaylist}
-              trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }} 
-              thumbColor="#FFFFFF" 
+              trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }}
+              thumbColor="#FFFFFF"
             />
           </View>
           <View style={styles.divider} />
@@ -104,11 +102,11 @@ export default function PrivacySettingsScreen() {
               <Text style={styles.toggleTitle}>Chia sẻ lỗi ẩn danh</Text>
               <Text style={styles.toggleSubtitle}>Gửi tự động để cải thiện ứng dụng</Text>
             </View>
-            <Switch 
-              value={analytics} 
+            <Switch
+              value={analytics}
               onValueChange={setAnalytics}
-              trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }} 
-              thumbColor="#FFFFFF" 
+              trackColor={{ true: MOOD_BEAT_COLORS.primary, false: 'rgba(255,255,255,0.2)' }}
+              thumbColor="#FFFFFF"
             />
           </View>
         </GlassCard>
@@ -129,22 +127,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: MOOD_BEAT_COLORS.background },
   ambientGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingBottom: SPACING.md },
-  backBtnWrapper: { borderRadius: 22, overflow: 'hidden' },
-  backBtn: { width: 44, height: 44, backgroundColor: 'rgba(255, 255, 255, 0.08)', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#FFFFFF' },
   scrollContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING['3xl'], paddingTop: SPACING.lg },
-  
+
   sectionTitle: { fontSize: FONT_SIZE.md, fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginBottom: SPACING.md, marginLeft: SPACING.sm, marginTop: SPACING.lg },
   card: { borderRadius: RADIUS.xl, padding: SPACING.lg },
-  
+
   toggleRow: { flexDirection: 'row', alignItems: 'center' },
   iconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md },
   textStack: { flex: 1 },
   toggleTitle: { fontSize: FONT_SIZE.md, color: '#FFFFFF', fontWeight: '600' },
   toggleSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
-  
+
   divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: SPACING.md },
-  
+
   actionBtn: { flexDirection: 'row', alignItems: 'center', padding: SPACING.lg, gap: SPACING.md },
   dangerText: { fontSize: FONT_SIZE.md, color: COLORS.error, fontWeight: '600' }
 })

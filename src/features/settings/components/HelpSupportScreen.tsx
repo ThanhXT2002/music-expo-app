@@ -5,10 +5,10 @@
  */
 
 import { View, ScrollView, Pressable, StyleSheet, Text, Linking } from 'react-native'
-import { BlurView } from 'expo-blur'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowLeft, ChevronDown, MessageCircle, HelpCircle } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { GlassCard } from '@shared/components/GlassCard'
@@ -48,13 +48,11 @@ export default function HelpSupportScreen() {
         colors={['rgba(255, 0, 122, 0.15)', 'transparent']}
         style={styles.ambientGlow}
       />
-      
+
       <View style={[styles.headerRow, { paddingTop: insets.top + SPACING.md }]}>
-        <Pressable style={styles.backBtnWrapper} onPress={() => router.back()}>
-          <BlurView intensity={20} tint="dark" style={styles.backBtn}>
-            <ArrowLeft size={22} color={COLORS.textPrimary} />
-          </BlurView>
-        </Pressable>
+        <GlassIconButton size={44} onPress={() => router.back()}>
+          <ArrowLeft size={22} color={COLORS.textPrimary} />
+        </GlassIconButton>
         <Text style={styles.headerTitle}>Trợ giúp & Hỗ trợ</Text>
         <View style={{ width: 44 }} />
       </View>
@@ -101,13 +99,13 @@ const styles = StyleSheet.create({
   backBtn: { width: 44, height: 44, backgroundColor: 'rgba(255, 255, 255, 0.08)', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#FFFFFF' },
   scrollContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING['3xl'], paddingTop: SPACING.lg },
-  
+
   iconHeader: { alignItems: 'center', marginBottom: SPACING.xl, marginTop: SPACING.md },
   introText: { fontSize: FONT_SIZE.md, color: 'rgba(255,255,255,0.7)', marginTop: SPACING.md, fontWeight: '500' },
 
   sectionTitle: { fontSize: FONT_SIZE.md, fontWeight: '700', color: 'rgba(255,255,255,0.5)', marginBottom: SPACING.md, marginLeft: SPACING.sm },
   card: { borderRadius: RADIUS.xl, padding: SPACING.lg, marginBottom: SPACING.xl },
-  
+
   faqItem: { borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)', paddingBottom: SPACING.md, marginBottom: SPACING.md },
   faqHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   faqQ: { flex: 1, fontSize: 15, fontWeight: '600', color: '#FFFFFF', paddingRight: SPACING.md, lineHeight: 22 },

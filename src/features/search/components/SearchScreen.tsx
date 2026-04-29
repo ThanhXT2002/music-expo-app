@@ -12,7 +12,8 @@ import { useRouter } from 'expo-router'
 import { useSafePush } from '@core/hooks/useSafePush'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Search, X } from 'lucide-react-native'
+import { Search, X, ArrowLeft } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { useSearchFull, useSearchSuggestions } from '../hooks/useSearch'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, LAYOUT } from '@shared/constants/spacing'
@@ -342,9 +343,15 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      {/* Header với back button */}
       <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
-        <Text style={styles.headerTitle}>Tìm kiếm</Text>
+        <View style={styles.headerRow}>
+          <GlassIconButton size={44} onPress={() => router.back()}>
+            <ArrowLeft size={22} color={COLORS.textPrimary} />
+          </GlassIconButton>
+          <Text style={styles.headerTitle}>Tìm kiếm</Text>
+          <View style={{ width: 44 }} />
+        </View>
       </View>
 
       {/* Search Bar */}
@@ -486,11 +493,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
   headerTitle: {
     fontSize: FONT_SIZE['2xl'],
     fontWeight: '700',
     color: COLORS.textPrimary,
-    letterSpacing: -0.5
+    letterSpacing: -0.5,
+    flex: 1,
+    textAlign: 'center'
   },
 
   // Search Bar

@@ -5,12 +5,11 @@
  */
 
 import { View, ScrollView, Pressable, StyleSheet, Linking, Text } from 'react-native'
-import { BlurView } from 'expo-blur'
-
 import { useRouter } from 'expo-router'
+import { ArrowLeft, ScrollText, Copyright, ShieldCheck, Power, Mail, Lightbulb } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { COLORS } from '@shared/constants/colors'
 import { AuthBackground } from '@shared/components/ui/AuthBackground'
-import { ArrowLeft, ScrollText, Copyright, ShieldCheck, Power, Mail, Lightbulb } from 'lucide-react-native'
 
 const CARDS = [
   {
@@ -71,11 +70,9 @@ export default function TermsOfServiceScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.headerRow}>
-          <Pressable style={styles.backBtnWrapper} onPress={() => router.back()}>
-            <BlurView intensity={20} tint="dark" style={styles.backBtn}>
-              <ArrowLeft size={22} color={COLORS.textPrimary} />
-            </BlurView>
-          </Pressable>
+          <GlassIconButton size={44} onPress={() => router.back()}>
+            <ArrowLeft size={22} color={COLORS.textPrimary} />
+          </GlassIconButton>
           <Text style={styles.headerTitle}>Điều khoản dịch vụ</Text>
           <View style={{ width: 44 }} />
         </View>
@@ -134,17 +131,6 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: 56, paddingBottom: 40 },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  backBtnWrapper: {
-    borderRadius: 22,
-    overflow: 'hidden'
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
   headerTitle: { fontSize: 20, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -0.5 },
 
   updated: { fontSize: 12, color: COLORS.textMuted, marginBottom: 12 },

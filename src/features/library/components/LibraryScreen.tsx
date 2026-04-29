@@ -5,14 +5,12 @@
  * @module features/library
  */
 
-import { View, ScrollView, Pressable, StyleSheet, Dimensions, Text } from 'react-native'
-
+import { View, ScrollView, Pressable, StyleSheet, Text } from 'react-native'
 import { useState, useCallback } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
-import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Plus, Heart, Clock, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react-native'
+import { Plus } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { useSafePush } from '@core/hooks/useSafePush'
 import { useLibrary } from '../hooks/useLibrary'
 import { usePlayerStore } from '@features/player/store/playerStore'
@@ -20,14 +18,12 @@ import { usePlaylistStore } from '@features/playlist/store/playlistStore'
 import { useFavoriteIds } from '../hooks/useFavorites'
 import * as AudioManager from '@core/audio/AudioManager'
 import { COLORS } from '@shared/constants/colors'
-import { FONT_SIZE, SPACING, RADIUS, SHADOWS, LAYOUT } from '@shared/constants/spacing'
-import { GlassCard } from '@shared/components/GlassCard'
+import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing'
 import { TrackListItem } from '@shared/components/TrackListItem'
 import { EmptyState } from '@shared/components/EmptyState'
 import type { LibraryTab } from '../types'
 import type { Track } from '@shared/types/track'
 
-const { width } = Dimensions.get('window')
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -60,63 +56,6 @@ function LibraryFilterTabs({
   )
 }
 
-/** Playlist card item (Isolated rounded card) */
-function PlaylistItem({
-  title,
-  trackCount,
-  coverUrl,
-  onPress,
-  isSelected = false
-}: {
-  title: string
-  trackCount: number
-  coverUrl?: string
-  onPress: () => void
-  isSelected?: boolean
-}) {
-  return (
-    <Pressable onPress={onPress} style={{ marginBottom: SPACING.md }}>
-      {({ pressed }) => (
-        <View style={styles.playlistCardWrapper}>
-          {isSelected && (
-            <LinearGradient
-              colors={['#EA4F88', '#B026FF', '#2196F3']}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-          )}
-          <View
-            style={[
-              styles.playlistCardInner,
-              isSelected && styles.playlistCardInnerSelected,
-              pressed && { opacity: 0.8 }
-            ]}
-          >
-            <View style={styles.playlistCover}>
-              {coverUrl ? (
-                <Image source={{ uri: coverUrl }} style={styles.playlistCoverImage} contentFit='cover' />
-              ) : (
-                <LinearGradient colors={[COLORS.secondary, COLORS.tertiary]} style={styles.playlistCoverImage}>
-                  <Text style={styles.playlistCoverText}>♫</Text>
-                </LinearGradient>
-              )}
-            </View>
-            <View style={styles.playlistInfo}>
-              <Text style={styles.playlistTitle} numberOfLines={1}>
-                {title}
-              </Text>
-              <Text style={styles.playlistCount}>{trackCount} bài hát</Text>
-            </View>
-            <View style={styles.moreButton}>
-              <MoreHorizontal size={18} color='#A0A0A0' />
-            </View>
-          </View>
-        </View>
-      )}
-    </Pressable>
-  )
-}
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -179,12 +118,12 @@ export default function LibraryScreen() {
         <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
           <Text style={styles.headerTitleLeft}>Thư viện</Text>
           <View style={styles.headerRightAbsolute}>
-            <Pressable style={styles.iconButton} onPress={() => {
+            <GlassIconButton onPress={() => {
               const { openCreateModal } = usePlaylistStore.getState()
               openCreateModal()
             }}>
               <Plus size={20} color='#FFFFFF' />
-            </Pressable>
+            </GlassIconButton>
           </View>
         </View>
 
@@ -276,14 +215,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: SPACING.lg,
     bottom: SPACING.md - 4 // Trừ hao nhẹ để icon nằm chính giữa text
-  },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center'
   },
   headerTitleLeft: {
     fontSize: FONT_SIZE['2xl'],

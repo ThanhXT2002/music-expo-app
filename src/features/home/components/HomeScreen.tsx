@@ -122,7 +122,7 @@ function HomeHeader() {
           <Bell size={20} color={COLORS.textSecondary} />
           {/* <View style={styles.bellDot} /> */}
         </GlassIconButton>
-        <GlassIconButton onPress={() => safePush('/(tabs)/search')} hitSlop={10}>
+        <GlassIconButton onPress={() => safePush('/search')} hitSlop={10}>
           <Search size={20} color={COLORS.textSecondary} />
         </GlassIconButton>
       </View>

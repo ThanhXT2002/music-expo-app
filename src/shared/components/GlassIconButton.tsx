@@ -9,6 +9,7 @@
  */
 
 import { Pressable, type ViewStyle } from 'react-native'
+import { BlurView } from 'expo-blur'
 import type { ReactNode } from 'react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -24,6 +25,10 @@ interface GlassIconButtonProps {
   hitSlop?: number
   /** Style bổ sung */
   style?: ViewStyle
+  /** Sử dụng BlurView thay vì background color (mặc định: false) */
+  useBlur?: boolean
+  /** Blur intensity khi useBlur=true (mặc định: 20) */
+  blurIntensity?: number
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -37,27 +42,57 @@ interface GlassIconButtonProps {
  * </GlassIconButton>
  *
  * @example
- * // Kích thước lớn hơn
- * <GlassIconButton size={48} onPress={handleSearch}>
- *   <Search size={22} color='#fff' />
+ * // Kích thước lớn hơn với BlurView
+ * <GlassIconButton size={44} useBlur onPress={handleBack}>
+ *   <ArrowLeft size={22} color='#fff' />
  * </GlassIconButton>
  */
-export function GlassIconButton({ children, onPress, size = 40, hitSlop = 8, style }: GlassIconButtonProps) {
+export function GlassIconButton({
+  children,
+  onPress,
+  size = 40,
+  hitSlop = 8,
+  style,
+  useBlur = false,
+  blurIntensity = 20
+}: GlassIconButtonProps) {
+  const buttonStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    overflow: 'hidden' as const,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  }
+
+  if (useBlur) {
+    return (
+      <Pressable onPress={onPress} hitSlop={hitSlop} style={[buttonStyle, style]}>
+        <BlurView
+          intensity={blurIntensity}
+          tint="dark"
+          style={{
+            width: size,
+            height: size,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {children}
+        </BlurView>
+      </Pressable>
+    )
+  }
+
   return (
     <Pressable
       onPress={onPress}
       hitSlop={hitSlop}
       style={[
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: 'rgba(255,255,255,0.1)',
-          borderWidth: 1,
-          borderColor: 'rgba(255,255,255,0.18)',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
+        buttonStyle,
+        { backgroundColor: 'rgba(255,255,255,0.1)' },
         style,
       ]}
     >

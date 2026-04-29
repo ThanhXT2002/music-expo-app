@@ -6,10 +6,10 @@
 
 import { View, ScrollView, Pressable, StyleSheet, Text, TextInput, Alert, Keyboard, Image } from 'react-native'
 import { useState } from 'react'
-import { BlurView } from 'expo-blur'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { ArrowLeft, User, Mail, Camera, Key } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { GlassCard } from '@shared/components/GlassCard'
@@ -60,11 +60,9 @@ export default function ProfileScreen() {
 
       {/* Header */}
       <View style={[styles.headerRow, { paddingTop: insets.top + SPACING.md }]}>
-        <Pressable style={styles.backBtnWrapper} onPress={() => router.back()}>
-          <BlurView intensity={20} tint="dark" style={styles.backBtn}>
-            <ArrowLeft size={22} color={COLORS.textPrimary} />
-          </BlurView>
-        </Pressable>
+        <GlassIconButton size={44} onPress={() => router.back()}>
+          <ArrowLeft size={22} color={COLORS.textPrimary} />
+        </GlassIconButton>
         <Text style={styles.headerTitle}>Hồ sơ cá nhân</Text>
         <Pressable
           style={[styles.saveBtn, name !== user?.name && styles.saveBtnActive]}
@@ -160,17 +158,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.md,
     paddingBottom: SPACING.md,
-  },
-  backBtnWrapper: {
-    borderRadius: 22,
-    overflow: 'hidden'
-  },
-  backBtn: {
-    width: 44,
-    height: 44,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    alignItems: 'center',
-    justifyContent: 'center'
   },
   headerTitle: {
     fontSize: FONT_SIZE.lg,

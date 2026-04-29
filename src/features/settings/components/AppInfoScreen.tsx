@@ -5,11 +5,11 @@
  */
 
 import { View, ScrollView, Pressable, StyleSheet, Text, Alert } from 'react-native'
-import { BlurView } from 'expo-blur'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import Constants from 'expo-constants'
 import { ArrowLeft, RefreshCw, Layers } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
 import { GlassCard } from '@shared/components/GlassCard'
@@ -34,11 +34,9 @@ export default function AppInfoScreen() {
       />
 
       <View style={[styles.headerRow, { paddingTop: insets.top + SPACING.md }]}>
-        <Pressable style={styles.backBtnWrapper} onPress={() => router.back()}>
-          <BlurView intensity={20} tint="dark" style={styles.backBtn}>
-            <ArrowLeft size={22} color={COLORS.textPrimary} />
-          </BlurView>
-        </Pressable>
+        <GlassIconButton size={44} onPress={() => router.back()}>
+          <ArrowLeft size={22} color={COLORS.textPrimary} />
+        </GlassIconButton>
         <Text style={styles.headerTitle}>Thông tin ứng dụng</Text>
         <View style={{ width: 44 }} />
       </View>
@@ -85,8 +83,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: MOOD_BEAT_COLORS.background },
   ambientGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SPACING.md, paddingBottom: SPACING.md },
-  backBtnWrapper: { borderRadius: 22, overflow: 'hidden' },
-  backBtn: { width: 44, height: 44, backgroundColor: 'rgba(255, 255, 255, 0.08)', alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: FONT_SIZE.lg, fontWeight: '700', color: '#FFFFFF' },
   scrollContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING['3xl'], paddingTop: SPACING.lg },
 
