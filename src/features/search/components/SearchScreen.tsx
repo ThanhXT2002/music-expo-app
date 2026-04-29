@@ -12,8 +12,7 @@ import { useRouter } from 'expo-router'
 import { useSafePush } from '@core/hooks/useSafePush'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { BlurView } from 'expo-blur'
-import { Search, Mic, X, TrendingUp } from 'lucide-react-native'
+import { Search, X } from 'lucide-react-native'
 import { useSearchFull, useSearchSuggestions } from '../hooks/useSearch'
 import { COLORS } from '@shared/constants/colors'
 import { FONT_SIZE, SPACING, RADIUS, LAYOUT } from '@shared/constants/spacing'
@@ -22,7 +21,7 @@ import { TrackListItem } from '@shared/components/TrackListItem'
 import { HorizontalCardList } from '@shared/components/HorizontalCardList'
 import { usePlayerStore } from '@features/player/store/playerStore'
 import * as AudioManager from '@core/audio/AudioManager'
-import type { Track, Album, Artist } from '@shared/types/track'
+import type { Track, Artist } from '@shared/types/track'
 import type { SearchTab } from '../types'
 
 // ─── Genre Chips Data ─────────────────────────────────────────────────────────
@@ -173,6 +172,84 @@ function FilterTabs({ activeTab, onTabChange }: { activeTab: SearchTab; onTabCha
   )
 }
 
+/** Skeleton loading cho track items - match TrackListItem style */
+function TrackSkeleton({ count = 5 }: { count?: number }) {
+  return (
+    <View style={styles.trackSkeletonContainer}>
+      {Array.from({ length: count }).map((_, i) => (
+        <View key={i} style={styles.trackSkeletonItem}>
+          {/* Cover tròn giống TrackListItem */}
+          <View style={styles.skeletonCover} />
+          {/* Info */}
+          <View style={styles.trackSkeletonInfo}>
+            <View style={[styles.skeletonLine, { width: '70%', height: 14, marginBottom: 4 }]} />
+            <View style={[styles.skeletonLine, { width: '50%', height: 11 }]} />
+          </View>
+          {/* Duration placeholder */}
+          <View style={[styles.skeletonLine, { width: 32, height: 11 }]} />
+        </View>
+      ))}
+    </View>
+  )
+}
+
+/** Skeleton loading cho album cards - vuông bo góc */
+function AlbumSkeleton() {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalResults}>
+      {[1, 2, 3, 4].map((i) => (
+        <View key={i} style={styles.cardSkeletonItem}>
+          <View style={styles.skeletonAlbumImage} />
+          <View style={[styles.skeletonLine, { width: 100, height: 12, marginTop: 8 }]} />
+          <View style={[styles.skeletonLine, { width: 80, height: 10, marginTop: 4 }]} />
+        </View>
+      ))}
+    </ScrollView>
+  )
+}
+
+/** Skeleton loading cho artist cards - avatar tròn */
+function ArtistSkeleton() {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalResults}>
+      {[1, 2, 3, 4].map((i) => (
+        <View key={i} style={styles.artistSkeletonItem}>
+          <View style={styles.skeletonArtistAvatar} />
+          <View style={[styles.skeletonLine, { width: 100, height: 12, marginTop: 8 }]} />
+        </View>
+      ))}
+    </ScrollView>
+  )
+}
+
+/** Skeleton loading theo tab */
+function SearchSkeleton({ activeTab }: { activeTab: SearchTab }) {
+  return (
+    <View style={styles.skeletonContainer}>
+      {(activeTab === 'all' || activeTab === 'tracks') && (
+        <View style={styles.resultSection}>
+          {activeTab === 'all' && <SectionHeader title='Bài hát' />}
+          <TrackSkeleton count={activeTab === 'tracks' ? 15 : 5} />
+        </View>
+      )}
+
+      {(activeTab === 'all' || activeTab === 'albums') && (
+        <View style={styles.resultSection}>
+          {activeTab === 'all' && <SectionHeader title='Album' />}
+          <AlbumSkeleton />
+        </View>
+      )}
+
+      {(activeTab === 'all' || activeTab === 'artists') && (
+        <View style={styles.resultSection}>
+          {activeTab === 'all' && <SectionHeader title='Nghệ sĩ' />}
+          <ArtistSkeleton />
+        </View>
+      )}
+    </View>
+  )
+}
+
 /** Album card nhỏ trong kết quả */
 
 
@@ -201,23 +278,27 @@ export default function SearchScreen() {
   const [query, setQuery] = useState('')
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [activeTab, setActiveTab] = useState<SearchTab>('all')
+  const [hasSearched, setHasSearched] = useState(false)
 
-  const { results, isSearching, hasResults } = useSearchFull(query)
+  const { results, isSearching, hasResults, isWaitingDebounce } = useSearchFull(query)
   const { suggestions, isFetchingSuggestions } = useSearchSuggestions(query)
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.id)
 
   const handleClear = useCallback(() => {
     setQuery('')
+    setHasSearched(false)
   }, [])
 
   const handleSuggestionSelect = useCallback((text: string) => {
     setQuery(text)
+    setHasSearched(true)
     setIsInputFocused(false)
     Keyboard.dismiss()
   }, [])
 
   const handleGenreSelect = useCallback((genre: string) => {
     setQuery(genre)
+    setHasSearched(true)
     setIsInputFocused(false)
     Keyboard.dismiss()
   }, [])
@@ -273,6 +354,7 @@ export default function SearchScreen() {
         onClear={handleClear}
         onFocus={() => setIsInputFocused(true)}
         onSubmitEditing={() => {
+          if (query.length >= 2) setHasSearched(true)
           setIsInputFocused(false)
           Keyboard.dismiss()
         }}
@@ -288,6 +370,13 @@ export default function SearchScreen() {
         />
       )}
 
+      {/* Filter Tabs - Sticky khi có query */}
+      {query && (
+        <View style={styles.tabsContainer}>
+          <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        </View>
+      )}
+
       {/* Content */}
       {!query ? (
         // Chưa search → Genre grid
@@ -295,24 +384,26 @@ export default function SearchScreen() {
           <GenreGrid onSelect={handleGenreSelect} />
           <View style={{ height: LAYOUT.tabBarOffset }} />
         </ScrollView>
-      ) : isSearching ? (
-        // Đang tìm
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={COLORS.primary} />
-          <Text style={styles.loadingText}>Đang tìm kiếm...</Text>
-        </View>
-      ) : hasResults && results ? (
-        // Có kết quả
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          onScrollBeginDrag={() => {
-            Keyboard.dismiss();
-            setIsInputFocused(false);
-          }}
-        >
-          <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      ) : (
+        <>
+
+          {isSearching || isWaitingDebounce ? (
+            // Đang tìm → hiện skeleton
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <SearchSkeleton activeTab={activeTab} />
+              <View style={{ height: LAYOUT.tabBarOffset }} />
+            </ScrollView>
+          ) : hasResults && results ? (
+            // Có kết quả
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              onScrollBeginDrag={() => {
+                Keyboard.dismiss();
+                setIsInputFocused(false);
+              }}
+            >
 
           {/* Bài hát */}
           {(activeTab === 'all' || activeTab === 'tracks') && results.tracks.length > 0 && (
@@ -370,14 +461,16 @@ export default function SearchScreen() {
 
           <View style={{ height: LAYOUT.tabBarOffset }} />
         </ScrollView>
-      ) : query.length >= 2 ? (
-        // Không có kết quả
-        <View style={styles.emptyContainer}>
-          <Search size={48} color={COLORS.textMuted} />
-          <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
-          <Text style={styles.emptyDesc}>Thử tìm từ khoá khác nhé</Text>
-        </View>
-      ) : null}
+          ) : hasSearched && !isSearching && !isWaitingDebounce && !hasResults && query.length >= 2 ? (
+            // Không có kết quả (chỉ hiện khi đã search xong hoàn toàn)
+            <View style={styles.emptyContainer}>
+              <Search size={48} color={COLORS.textMuted} />
+              <Text style={styles.emptyTitle}>Không tìm thấy kết quả</Text>
+              <Text style={styles.emptyDesc}>Thử tìm từ khoá khác nhé</Text>
+            </View>
+          ) : null}
+        </>
+      )}
     </View>
   )
 }
@@ -505,18 +598,25 @@ const styles = StyleSheet.create({
   },
 
   // Filter Tabs
+  tabsContainer: {
+    backgroundColor: COLORS.background,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)'
+  },
   tabsScroll: {
     paddingHorizontal: SPACING.lg,
-    gap: SPACING.sm,
-    paddingVertical: SPACING.sm
+    gap: SPACING.sm
   },
   filterTab: {
+    height: 36,
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.sm,
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
-    borderColor: COLORS.border
+    borderColor: COLORS.border,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   filterTabActive: {
     backgroundColor: COLORS.primary,
@@ -525,7 +625,8 @@ const styles = StyleSheet.create({
   filterTabText: {
     fontSize: FONT_SIZE.sm,
     fontWeight: '600',
-    color: COLORS.textSecondary
+    color: COLORS.textSecondary,
+    lineHeight: 36
   },
   filterTabTextActive: {
     color: '#FFFFFF'
@@ -599,5 +700,62 @@ const styles = StyleSheet.create({
   emptyDesc: {
     fontSize: FONT_SIZE.md,
     color: COLORS.textMuted
+  },
+
+  // Skeleton
+  skeletonContainer: {
+    flex: 1
+  },
+  trackSkeletonContainer: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.sm
+  },
+  trackSkeletonItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.full, // Pill shape giống TrackListItem
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(20, 15, 45, 0.7)',
+    gap: SPACING.md
+  },
+  skeletonCover: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.full, // Tròn hoàn toàn giống TrackListItem
+    backgroundColor: COLORS.surface,
+    opacity: 0.7
+  },
+  trackSkeletonInfo: {
+    flex: 1
+  },
+  skeletonLine: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.sm,
+    opacity: 0.7
+  },
+  cardSkeletonItem: {
+    width: 120,
+    alignItems: 'flex-start'
+  },
+  skeletonAlbumImage: {
+    width: 120,
+    height: 120,
+    borderRadius: RADIUS.md, // Album vuông bo góc
+    backgroundColor: COLORS.surface,
+    opacity: 0.7
+  },
+  artistSkeletonItem: {
+    width: 110,
+    alignItems: 'center'
+  },
+  skeletonArtistAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50, // Tròn hoàn toàn (100/2)
+    backgroundColor: COLORS.surface,
+    opacity: 0.7
   }
 })
