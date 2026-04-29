@@ -11,18 +11,16 @@ import {
   View,
   ScrollView,
   RefreshControl,
-  Pressable,
   Dimensions,
   StyleSheet,
-  Text,
-  ActivityIndicator
+  Text
 } from 'react-native'
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Bell, Play, ChevronRight, TrendingUp, Clock, Music2 } from 'lucide-react-native'
+import { Bell, Search } from 'lucide-react-native'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 
 import { createLogger } from '@core/logger'
 import { useSafePush } from '@core/hooks/useSafePush'
@@ -31,25 +29,23 @@ import { useAuthStore } from '@features/auth/store/authStore'
 import { usePlayerStore } from '@features/player/store/playerStore'
 import * as AudioManager from '@core/audio/AudioManager'
 import { COLORS } from '@shared/constants/colors'
-import { FONT_SIZE, SPACING, RADIUS, SHADOWS, LAYOUT } from '@shared/constants/spacing'
+import { FONT_SIZE, SPACING, RADIUS, LAYOUT } from '@shared/constants/spacing'
 import { SectionHeader } from '@shared/components/SectionHeader'
 import { TrackListItem } from '@shared/components/TrackListItem'
 import { HorizontalCardList } from '@shared/components/HorizontalCardList'
 import { MusicBannerCarousel } from './MusicBannerCarousel'
 import type { Track } from '@shared/types/track'
-import type { FeaturedItem, RecommendedPlaylist } from '../types'
+import type { RecommendedPlaylist } from '../types'
 
 const logger = createLogger('home-screen')
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const BANNER_WIDTH = SCREEN_WIDTH - SPACING.lg * 2
-
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
 
 /** Hook phát nhạc dùng chung cho toàn màn hình Home */
 function usePlayTrack() {
   const safePush = useSafePush()
-  const store = usePlayerStore.getState()
 
   return useCallback(
     async (track: Track, contextTracks?: Track[]) => {
@@ -95,6 +91,7 @@ function usePlayTrack() {
 function HomeHeader() {
   const insets = useSafeAreaInsets()
   const user = useAuthStore((s) => s.user)
+  const safePush = useSafePush()
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Chào buổi sáng ☀️' : hour < 18 ? 'Chào buổi chiều 🌤️' : 'Chào buổi tối 🌙'
@@ -102,27 +99,32 @@ function HomeHeader() {
   return (
     <View style={[styles.header, { paddingTop: insets.top + SPACING.md }]}>
       <View style={styles.headerLeft}>
-        <Text style={styles.greeting}>{greeting}</Text>
-        <Text style={styles.userName} numberOfLines={1}>
-          {user?.name ?? 'Nghe nhạc vui vẻ!'}
-        </Text>
-      </View>
-      <View style={styles.headerRight}>
-        <Pressable style={styles.bellBtn} hitSlop={10}>
-          <Bell size={20} color={COLORS.textSecondary} />
-          <View style={styles.bellDot} />
-        </Pressable>
         <Image
           source={
             user?.profile_picture
               ? { uri: user.profile_picture }
-              : (process.env.EXPO_PUBLIC_USER_DEFAULT_IMG && process.env.EXPO_PUBLIC_USER_DEFAULT_IMG.startsWith('http')
-                  ? { uri: process.env.EXPO_PUBLIC_USER_DEFAULT_IMG }
-                  : require('../../../../assets/images/user-default.png')) // Tạm dùng logo làm fallback nếu chưa có file user-default.png
+              : process.env.EXPO_PUBLIC_USER_DEFAULT_IMG && process.env.EXPO_PUBLIC_USER_DEFAULT_IMG.startsWith('http')
+                ? { uri: process.env.EXPO_PUBLIC_USER_DEFAULT_IMG }
+                : require('../../../../assets/images/user-default.png') // Tạm dùng logo làm fallback nếu chưa có file user-default.png
           }
           style={styles.avatar}
           contentFit='cover'
         />
+        <View>
+          <Text style={styles.greeting}>{greeting}</Text>
+          <Text style={styles.userName} numberOfLines={1}>
+            {user?.name ?? 'Nghe nhạc vui vẻ!'}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.headerRight}>
+        <GlassIconButton hitSlop={10}>
+          <Bell size={20} color={COLORS.textSecondary} />
+          {/* <View style={styles.bellDot} /> */}
+        </GlassIconButton>
+        <GlassIconButton onPress={() => safePush('/(tabs)/search')} hitSlop={10}>
+          <Search size={20} color={COLORS.textSecondary} />
+        </GlassIconButton>
       </View>
     </View>
   )
@@ -156,10 +158,14 @@ function HomeSkeleton() {
   )
 }
 
-
-
 /** Top Songs — List dùng TrackListItem */
-function TopSongsSection({ tracks, onPress }: { tracks: Track[]; onPress: (track: Track, contextTracks?: Track[]) => void }) {
+function TopSongsSection({
+  tracks,
+  onPress
+}: {
+  tracks: Track[]
+  onPress: (track: Track, contextTracks?: Track[]) => void
+}) {
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.id)
 
   if (!tracks || tracks.length === 0) return null
@@ -188,7 +194,13 @@ function TopSongsSection({ tracks, onPress }: { tracks: Track[]; onPress: (track
 }
 
 /** Nghe nhiều nhất — Horizontal scroll cards */
-function MostPlayedSection({ tracks, onPress }: { tracks: Track[]; onPress: (track: Track, contextTracks?: Track[]) => void }) {
+function MostPlayedSection({
+  tracks,
+  onPress
+}: {
+  tracks: Track[]
+  onPress: (track: Track, contextTracks?: Track[]) => void
+}) {
   if (!tracks || tracks.length === 0) return null
 
   const displayTracks = tracks.slice(3, 13)
@@ -201,7 +213,7 @@ function MostPlayedSection({ tracks, onPress }: { tracks: Track[]; onPress: (tra
           id: t.id,
           imageUrl: t.coverUrl,
           title: t.title,
-          subtitle: t.artist,
+          subtitle: t.artist
         }))}
         size='md'
         actionVariant='inline'
@@ -234,7 +246,7 @@ function RecommendedSection({
           id: pl.id,
           imageUrl: pl.coverUrl,
           title: pl.title,
-          subtitle: `${pl.trackCount} bài hát`,
+          subtitle: `${pl.trackCount} bài hát`
         }))}
         size='md'
         onPress={(item) => {
@@ -254,7 +266,6 @@ function RecommendedSection({
 export default function HomeScreen() {
   const { feed, isLoading, refetch } = useHome()
   const [refreshing, setRefreshing] = useState(false)
-  const router = useRouter()
   const handlePlayTrack = usePlayTrack()
 
   const onRefresh = useCallback(async () => {
@@ -362,6 +373,8 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
+    flexDirection: 'row',
+    gap: SPACING.md,
     marginRight: SPACING.md
   },
   greeting: {
@@ -413,5 +426,5 @@ const styles = StyleSheet.create({
   // Section container
   sectionContainer: {
     marginTop: SPACING['2xl']
-  },
+  }
 })

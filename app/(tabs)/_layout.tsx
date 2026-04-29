@@ -192,8 +192,8 @@ export default function TabLayout() {
   return (
     <Tabs tabBar={(props) => <PillTabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name='index' options={{ title: 'Trang chủ' }} />
-      {/* Search tab ẩn khỏi tab bar — sẽ chuyển sang header Home */}
-      <Tabs.Screen name='list' options={{ title: 'Tìm kiếm', href: null }} />
+      {/* Search tab ẩn khỏi tab bar — truy cập qua header Home */}
+      <Tabs.Screen name='search' options={{ title: 'Tìm kiếm', href: null }} />
       <Tabs.Screen name='library' options={{ title: 'Thư viện' }} />
       <Tabs.Screen name='downloads' options={{ title: 'Tải xuống' }} />
       <Tabs.Screen name='settings' options={{ title: 'Cài đặt' }} />

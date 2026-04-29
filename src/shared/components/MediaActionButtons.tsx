@@ -7,9 +7,8 @@
 
 import React from 'react'
 import { View, Pressable, StyleSheet, type ViewStyle } from 'react-native'
-import { Play, Heart, Download } from 'lucide-react-native'
-import { COLORS } from '@shared/constants/colors'
-import { SHADOWS } from '@shared/constants/spacing'
+import { Heart, Download } from 'lucide-react-native'
+import { GlassPlayButton } from './GlassPlayButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,32 +65,25 @@ export function MediaActionButtons({
   if (variant === 'overlay') {
     // Nút Play nổi — thường đặt absolute trên ảnh
     return (
-      <Pressable
+      <GlassPlayButton
+        variant='solid'
+        size={pSize}
+        iconSize={iSize}
         onPress={onPlay}
-        hitSlop={8}
-        style={[
-          styles.overlayButton,
-          { width: pSize, height: pSize, borderRadius: pSize / 2 },
-          style,
-        ]}
-      >
-        <Play size={iSize} color='#fff' fill='#fff' style={{ marginLeft: 1 }} />
-      </Pressable>
+        style={{ ...styles.overlayButton, ...style }}
+      />
     )
   }
 
   // Variant 'inline' — hàng ngang: Play (viền) + Heart + Download
   return (
     <View style={[styles.inlineRow, style]}>
-      <Pressable
+      <GlassPlayButton
+        variant='outline'
+        size={pSize}
+        iconSize={iSize}
         onPress={onPlay}
-        style={[
-          styles.inlinePlayButton,
-          { width: pSize, height: pSize, borderRadius: pSize / 2 },
-        ]}
-      >
-        <Play size={iSize} color='#fff' style={{ marginLeft: 2 }} />
-      </Pressable>
+      />
 
       {showLike && (
         <Pressable onPress={onLike} hitSlop={8} style={styles.iconButton}>
@@ -111,16 +103,11 @@ export function MediaActionButtons({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  // Overlay variant — nút nổi trên ảnh (cùng style glass với inline)
+  // Overlay variant — position absolute, kích thước do GlassPlayButton xử lý
   overlayButton: {
     position: 'absolute',
     bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // Inline variant — hàng ngang
@@ -128,13 +115,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-  },
-  inlinePlayButton: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   iconButton: {
     padding: 4,
