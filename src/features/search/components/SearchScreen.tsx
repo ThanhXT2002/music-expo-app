@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router'
 import { useSafePush } from '@core/hooks/useSafePush'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { Search, X, ArrowLeft } from 'lucide-react-native'
+import { Search, X, ArrowLeft, Mic } from 'lucide-react-native'
 import { GlassIconButton } from '@shared/components/GlassIconButton'
 import { useSearchFull, useSearchSuggestions } from '../hooks/useSearch'
 import { COLORS } from '@shared/constants/colors'
@@ -350,7 +350,9 @@ export default function SearchScreen() {
             <ArrowLeft size={22} color={COLORS.textPrimary} />
           </GlassIconButton>
           <Text style={styles.headerTitle}>Tìm kiếm</Text>
-          <View style={{ width: 44 }} />
+          <GlassIconButton size={44} onPress={() => safePush('/song-identify')}>
+            <Mic size={20} color={COLORS.primary} />
+          </GlassIconButton>
         </View>
       </View>
 
@@ -533,16 +535,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.md,
     color: COLORS.textPrimary,
     height: '100%'
-  },
-  micButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: 'rgba(108, 92, 231, 0.12)', // Dùng mã RGB của COLORS.primary (#6C5CE7)
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(108, 92, 231, 0.2)'
   },
 
   // Dropdown

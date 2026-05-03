@@ -8,5 +8,10 @@ module.exports = defineConfig([
   eslintConfigPrettier,
   {
     ignores: ['dist/*']
+  },
+  {
+    rules: {
+      'react/no-unescaped-entities': 'off'
+    }
   }
 ])

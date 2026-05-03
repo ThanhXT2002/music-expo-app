@@ -1,122 +1,279 @@
 /**
  * @file song-identify.tsx
- * @description Trang nhận diện bài hát — Shazam-like feature.
- * Nút ghi âm tròn lớn, waveform animation, kết quả nhận dạng.
+ * @description Màn hình nhận diện bài hát bằng file audio.
+ * Modal presentation từ dưới lên, cho phép user chọn file và nhận diện.
  * @module app
  */
 
-import { View, Pressable, StyleSheet, Dimensions, Text } from 'react-native'
-
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView, ToastAndroid, Platform } from 'react-native'
 import { useState } from 'react'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
+import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
-import { X, Mic, Music } from 'lucide-react-native'
+import { Upload, Music, AlertCircle, ArrowLeft, CloudUpload } from 'lucide-react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import {
+  pickAudioFile,
+  identifySongByFile,
+  type IdentifySongResponse
+} from '@features/identify/services/identifyService'
 import { COLORS } from '@shared/constants/colors'
-import { FONT_SIZE, SPACING, RADIUS, SHADOWS } from '@shared/constants/spacing'
+import { FONT_SIZE, SPACING, RADIUS } from '@shared/constants/spacing'
+import { createLogger } from '@core/logger'
+import { GlassIconButton } from '@shared/components/GlassIconButton'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
-const BUTTON_SIZE = 140
+const logger = createLogger('song-identify-screen')
 
 export default function SongIdentifyScreen() {
-  const insets = useSafeAreaInsets()
   const router = useRouter()
-  const [isListening, setIsListening] = useState(false)
-  const [result, setResult] = useState<{
-    title: string
-    artist: string
-    coverUrl: string
-  } | null>(null)
+  const insets = useSafeAreaInsets()
 
-  const handleToggle = () => {
-    if (isListening) {
-      setIsListening(false)
-      // Mock result
-      setResult({
-        title: 'Chạy Ngay Đi',
-        artist: 'Sơn Tùng M-TP',
-        coverUrl: 'https://picsum.photos/seed/identify/200/200'
-      })
-    } else {
-      setResult(null)
-      setIsListening(true)
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<IdentifySongResponse | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null)
+
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT)
     }
   }
 
+  const handlePickAndIdentify = async () => {
+    try {
+      setError(null)
+      setResult(null)
+      setSelectedFileName(null)
+
+      // 1. Chọn file
+      const file = await pickAudioFile()
+      if (!file) return
+
+      setSelectedFileName(file.name)
+      logger.info('File đã chọn', { name: file.name, size: file.size })
+
+      // 2. Gửi lên server nhận diện
+      setLoading(true)
+      const identified = await identifySongByFile(file.uri, file.name, file.mimeType)
+
+      setResult(identified)
+      showToast(`Tìm thấy: ${identified.title}`)
+
+      logger.info('Nhận diện thành công', {
+        title: identified.title,
+        confidence: identified.confidence
+      })
+    } catch (err: any) {
+      const message = err?.message || 'Không thể nhận diện bài hát'
+      setError(message)
+      showToast(message)
+      logger.error('Nhận diện thất bại', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePlaySong = () => {
+    if (!result) return
+    router.back()
+    // Navigate sang player hoặc song detail
+    router.push(`/player/${result.id}` as any)
+  }
+
   return (
-    <View style={styles.container}>
-      <LinearGradient colors={['#0F0C29', '#1a1240', '#120d20']} style={StyleSheet.absoluteFillObject} />
+    <View style={[styles.container, { paddingTop: insets.top + SPACING.md }]}>
+      {/* Ambient purple glow */}
+      <LinearGradient
+        colors={['rgba(176, 38, 255, 0.15)', 'transparent']}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 0.4 }}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents='none'
+      />
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + SPACING.sm }]}>
-        <Pressable onPress={() => router.back()} style={styles.closeBtn} hitSlop={12}>
-          <X size={24} color={COLORS.textPrimary} />
-        </Pressable>
+      <View style={styles.header}>
+        <GlassIconButton size={44} onPress={() => router.back()}>
+          <ArrowLeft size={22} color={COLORS.textPrimary} />
+        </GlassIconButton>
         <Text style={styles.headerTitle}>Nhận diện bài hát</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 44 }} />
       </View>
 
-      {/* Main Content */}
-      <View style={styles.mainContent}>
-        {/* Status text */}
-        <Text style={styles.statusText}>
-          {isListening ? 'Đang lắng nghe...' : result ? 'Đã tìm thấy!' : 'Nhấn để nhận diện bài hát'}
-        </Text>
+      {/* Content */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Upload Button */}
+        <View style={styles.uploadBtnWrapper}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.uploadBtn,
+              pressed && styles.uploadBtnPressed
+            ]}
+            onPress={handlePickAndIdentify}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+                <Text style={styles.uploadTextLoading}>Đang nhận diện...</Text>
+                {selectedFileName && (
+                  <Text style={styles.uploadHint} numberOfLines={1}>
+                    {selectedFileName}
+                  </Text>
+                )}
+              </>
+            ) : (
+              <View style={styles.uploadContent}>
+                <View style={styles.uploadIconCircle}>
+                  <CloudUpload size={56} color="#C8B6FF" strokeWidth={1.5} />
+                </View>
+                <Text style={styles.uploadText}>Chọn file audio</Text>
+                <Text style={styles.uploadSubtitle}>Hoặc kéo thả file vào đây</Text>
+                <Text style={styles.uploadHint}>Hỗ trợ: MP3, WAV, M4A (Max 10MB)</Text>
+              </View>
+            )}
+          </Pressable>
+          {/* Dashed border overlay */}
+          <View style={styles.dashedBorder} pointerEvents="none" />
+        </View>
 
-        {/* Waveform rings (decorative) */}
-        {isListening && (
-          <View style={styles.ringsContainer}>
-            <View style={[styles.ring, styles.ring1]} />
-            <View style={[styles.ring, styles.ring2]} />
-            <View style={[styles.ring, styles.ring3]} />
+        {/* Error */}
+        {error && (
+          <View style={styles.errorBox}>
+            <AlertCircle size={20} color={COLORS.error} />
+            <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
-        {/* Main button */}
-        <Pressable onPress={handleToggle} style={styles.mainBtnWrap}>
-          <LinearGradient
-            colors={isListening ? ['#FF6B6B', '#EE5A24'] : ['#B026FF', '#6C5CE7']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.mainBtn, SHADOWS.purpleGlow]}
-          >
-            {isListening ? <View style={styles.stopIcon} /> : <Mic size={48} color='#FFFFFF' />}
-          </LinearGradient>
-        </Pressable>
-
-        {/* Hint */}
-        <Text style={styles.hintText}>
-          {isListening ? 'Đưa điện thoại lại gần nguồn phát nhạc' : 'Nhận dạng bài hát đang phát xung quanh'}
-        </Text>
-      </View>
-
-      {/* Result */}
-      {result && (
-        <View style={styles.resultSection}>
+        {/* Result */}
+        {result && (
           <View style={styles.resultCard}>
-            <View style={styles.resultCover}>
-              <Music size={24} color={COLORS.primary} />
+            {/* Album Art */}
+            <View style={styles.resultImageWrapper}>
+              <Image
+                source={{ uri: result.thumbnailUrl }}
+                style={styles.resultImage}
+                contentFit="cover"
+                transition={300}
+              />
+              {/* Glow effect */}
+              <View style={styles.resultImageGlow} />
             </View>
+
+            {/* Info */}
             <View style={styles.resultInfo}>
-              <Text style={styles.resultTitle}>{result.title}</Text>
-              <Text style={styles.resultArtist}>{result.artist}</Text>
+              <Text style={styles.resultTitle} numberOfLines={2}>
+                {result.title}
+              </Text>
+              <Text style={styles.resultArtist} numberOfLines={1}>
+                {result.artist}
+              </Text>
+              {result.album && (
+                <Text style={styles.resultAlbum} numberOfLines={1}>
+                  {result.album}
+                </Text>
+              )}
+              {result.confidence > 0 && (
+                <View style={styles.confidenceRow}>
+                  <View style={styles.confidenceBadge}>
+                    <Text style={styles.confidenceText}>
+                      Độ chính xác: {(result.confidence * 100).toFixed(0)}%
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
-            <Pressable onPress={() => router.push('/player/identify-result')} style={styles.playResultBtn}>
-              <LinearGradient colors={['#B026FF', '#6C5CE7']} style={styles.playResultGradient}>
-                <Text style={styles.playResultText}>Phát</Text>
-              </LinearGradient>
-            </Pressable>
+
+            {/* Action buttons */}
+            <View style={styles.actionButtons}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.playBtn,
+                  pressed && styles.playBtnPressed
+                ]}
+                onPress={handlePlaySong}
+              >
+                <LinearGradient
+                  colors={[COLORS.primary, COLORS.primaryDark]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.playBtnGradient}
+                >
+                  <Music size={20} color="#FFFFFF" />
+                  <Text style={styles.playBtnText}>Phát nhạc</Text>
+                </LinearGradient>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.secondaryBtn,
+                  pressed && { opacity: 0.7 }
+                ]}
+                onPress={handlePickAndIdentify}
+              >
+                <Upload size={18} color={COLORS.primary} />
+                <Text style={styles.secondaryBtnText}>Thử lại</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      )}
+        )}
+
+        {/* Instructions */}
+        {!result && !loading && (
+          <View style={styles.instructions}>
+            <Text style={styles.instructionsTitle}>Cách sử dụng:</Text>
+            <View style={styles.instructionItem}>
+              <View style={styles.instructionNumber}>
+                <Text style={styles.instructionNumberText}>1</Text>
+              </View>
+              <Text style={styles.instructionText}>
+                Nhấn nút &quot;Chọn file audio&quot; ở trên
+              </Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <View style={styles.instructionNumber}>
+                <Text style={styles.instructionNumberText}>2</Text>
+              </View>
+              <Text style={styles.instructionText}>
+                Chọn file nhạc từ thiết bị của bạn
+              </Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <View style={styles.instructionNumber}>
+                <Text style={styles.instructionNumberText}>3</Text>
+              </View>
+              <Text style={styles.instructionText}>
+                Đợi hệ thống nhận diện bài hát
+              </Text>
+            </View>
+            <View style={styles.instructionItem}>
+              <View style={styles.instructionNumber}>
+                <Text style={styles.instructionNumberText}>4</Text>
+              </View>
+              <Text style={styles.instructionText}>
+                Nhấn &quot;Phát nhạc&quot; để nghe bài hát
+              </Text>
+            </View>
+          </View>
+        )}
+      </ScrollView>
     </View>
   )
 }
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background
+  },
+  scrollView: {
+    flex: 1
   },
   header: {
     flexDirection: 'row',
@@ -125,132 +282,289 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md
   },
-  closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
   headerTitle: {
-    fontSize: FONT_SIZE.lg,
-    fontWeight: '700',
-    color: COLORS.textPrimary
-  },
-
-  mainContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 60
-  },
-  statusText: {
     fontSize: FONT_SIZE.xl,
     fontWeight: '700',
     color: COLORS.textPrimary,
-    marginBottom: SPACING['3xl']
+    letterSpacing: -0.3
   },
-
-  // Rings
-  ringsContainer: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  ring: {
-    position: 'absolute',
-    borderRadius: 999,
-    borderWidth: 1.5,
-    borderColor: 'rgba(176, 38, 255, 0.15)'
-  },
-  ring1: {
-    width: BUTTON_SIZE + 50,
-    height: BUTTON_SIZE + 50
-  },
-  ring2: {
-    width: BUTTON_SIZE + 100,
-    height: BUTTON_SIZE + 100,
-    borderColor: 'rgba(176, 38, 255, 0.08)'
-  },
-  ring3: {
-    width: BUTTON_SIZE + 150,
-    height: BUTTON_SIZE + 150,
-    borderColor: 'rgba(176, 38, 255, 0.04)'
-  },
-
-  // Main button
-  mainBtnWrap: {
-    marginBottom: SPACING['2xl']
-  },
-  mainBtn: {
-    width: BUTTON_SIZE,
-    height: BUTTON_SIZE,
-    borderRadius: BUTTON_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  stopIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    backgroundColor: '#FFFFFF'
-  },
-  hintText: {
-    fontSize: FONT_SIZE.md,
-    color: COLORS.textMuted,
-    textAlign: 'center',
-    paddingHorizontal: SPACING['3xl']
-  },
-
-  // Result
-  resultSection: {
+  content: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING['3xl']
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING['3xl'],
+    alignItems: 'center'
   },
-  resultCard: {
-    flexDirection: 'row',
+
+  // Upload Button
+  uploadBtnWrapper: {
+    position: 'relative',
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center'
+  },
+  uploadBtn: {
+    width: '100%',
+    borderRadius: RADIUS['2xl'],
+    borderWidth: 2,
+    borderColor: 'rgba(176, 38, 255, 0.4)',
+    backgroundColor: 'rgba(20, 20, 40, 0.3)',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: SPACING.md
+    justifyContent: 'center',
+    paddingHorizontal: SPACING['2xl'],
+    paddingVertical: 48
   },
-  resultCover: {
-    width: 50,
-    height: 50,
-    borderRadius: RADIUS.md,
-    backgroundColor: 'rgba(176, 38, 255, 0.12)',
+  uploadBtnPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.99 }]
+  },
+  uploadContent: {
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    width: '100%',
+    paddingVertical: SPACING.xl
   },
-  resultInfo: {
-    flex: 1
+  dashedBorder: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: RADIUS['2xl'] + 2,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(176, 38, 255, 0.6)'
   },
-  resultTitle: {
-    fontSize: FONT_SIZE.lg,
+  uploadIconCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 60,
+    backgroundColor: 'rgba(50, 50, 70, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10
+  },
+  uploadText: {
+    fontSize: FONT_SIZE['2xl'],
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    width: '100%',
+    marginTop: 8,
+    marginBottom: 8
   },
-  resultArtist: {
+  uploadSubtitle: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    width: '100%',
+    marginBottom: 16
+  },
+  uploadTextLoading: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginTop: SPACING.md,
+    textAlign: 'center'
+  },
+  uploadHint: {
     fontSize: FONT_SIZE.sm,
     color: COLORS.textMuted,
-    marginTop: 2
+    fontWeight: '500',
+    textAlign: 'center',
+    width: '100%',
+    marginTop: 0
   },
-  playResultBtn: {
+
+  // Error Box
+  errorBox: {
+    marginTop: SPACING.lg,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    backgroundColor: 'rgba(255, 65, 91, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 65, 91, 0.3)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    width: '100%',
+    maxWidth: 480
+  },
+  errorText: {
+    flex: 1,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.error,
+    lineHeight: 20
+  },
+
+  // Result Card
+  resultCard: {
+    marginTop: SPACING.xl,
+    padding: SPACING.lg,
+    borderRadius: RADIUS.xl,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    width: '100%',
+    maxWidth: 480
+  },
+  resultImageWrapper: {
+    position: 'relative',
+    alignSelf: 'center',
+    marginBottom: SPACING.lg
+  },
+  resultImage: {
+    width: 200,
+    height: 200,
+    borderRadius: RADIUS.lg
+  },
+  resultImageGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: RADIUS.lg,
+    backgroundColor: 'transparent',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10
+  },
+  resultInfo: {
+    gap: SPACING.xs,
+    marginBottom: SPACING.lg,
+    alignItems: 'center'
+  },
+  resultTitle: {
+    fontSize: FONT_SIZE['2xl'],
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+    textAlign: 'center',
+    lineHeight: 28
+  },
+  resultArtist: {
+    fontSize: FONT_SIZE.lg,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+    textAlign: 'center'
+  },
+  resultAlbum: {
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    marginTop: SPACING.xs
+  },
+  confidenceRow: {
+    marginTop: SPACING.sm,
+    alignItems: 'center'
+  },
+  confidenceBadge: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.full,
+    backgroundColor: 'rgba(176, 38, 255, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(176, 38, 255, 0.3)'
+  },
+  confidenceText: {
+    fontSize: FONT_SIZE.xs,
+    fontWeight: '600',
+    color: COLORS.primary
+  },
+
+  // Action Buttons
+  actionButtons: {
+    gap: SPACING.sm
+  },
+  playBtn: {
+    height: 52,
     borderRadius: RADIUS.full,
     overflow: 'hidden'
   },
-  playResultGradient: {
-    paddingHorizontal: SPACING.xl,
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.full
+  playBtnPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }]
   },
-  playResultText: {
-    fontSize: FONT_SIZE.sm,
+  playBtnGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm
+  },
+  playBtnText: {
+    fontSize: FONT_SIZE.md,
     fontWeight: '700',
     color: '#FFFFFF'
+  },
+  secondaryBtn: {
+    height: 48,
+    borderRadius: RADIUS.full,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm
+  },
+  secondaryBtnText: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: '600',
+    color: COLORS.primary
+  },
+
+  // Instructions
+  instructions: {
+    marginTop: SPACING['2xl'],
+    padding: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    backgroundColor: 'rgba(176, 38, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(176, 38, 255, 0.08)',
+    gap: SPACING.sm,
+    width: '100%',
+    maxWidth: 480
+  },
+  instructionsTitle: {
+    fontSize: FONT_SIZE.md,
+    fontWeight: '600',
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs
+  },
+  instructionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+    paddingVertical: SPACING.xs
+  },
+  instructionNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(176, 38, 255, 0.15)',
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  instructionNumberText: {
+    fontSize: FONT_SIZE.sm,
+    fontWeight: '700',
+    color: COLORS.primary
+  },
+  instructionText: {
+    flex: 1,
+    fontSize: FONT_SIZE.sm,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+    fontWeight: '500'
   }
 })
